@@ -25,3 +25,4 @@ Die Sortierkriterien sind:
 Zusätzlich zur Listenansicht soll es eine kalendarische Monatsübersicht geben, zu der umgeschaltet werden kann.
 Die Kalenderansicht so bauen, dass der Montag der erste Tag der Woche ist.
 In der Kalenderansicht sollen nur Aufgaben mit den Status Neu, In Bearbeitung und Wiedervorlage angezeigt werden.
+Favicon integrieren.

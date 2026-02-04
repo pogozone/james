@@ -44,9 +44,10 @@
   {
     "id": "1770210405309y5hon0415",
     "title": "Leserbrief an die AZ",
-    "description": "",
+    "description": "AI soll mir einen Artikel auf der AZ heraussuchen, an dem ich mich abarbeiten kann.",
     "dueDate": "2026-02-04",
-    "status": "Neu"
+    "status": "Neu",
+    "priority": "Hat Zeit"
   },
   {
     "id": "1770210432565k2b5sw628",
@@ -111,5 +112,13 @@
     "description": "https://mashcamp.shop/shop/abfuellen/cornelius-keg-18l-mit-nc-anschluessen-gebraucht/",
     "dueDate": "2026-02-04",
     "status": "Neu"
+  },
+  {
+    "id": "1770236729730oprs1llwj",
+    "title": "Schäffler Einladung",
+    "description": "Wer soll eingeladen werden:\n- Katharina\n-",
+    "dueDate": "2026-02-05",
+    "status": "Neu",
+    "priority": "Hat Zeit"
   }
 ]
