@@ -1,0 +1,27 @@
+Ich brauche eine Todo Liste mit folgenden Funktionen:
+Die Applikation heißt "James".
+Eine Aufgabe besteht aus einem Titel, einem optionalen Beschreibungstext, einem Datum, bis wann die Aufgabe erledigt sein muss, einer Priorität und einen Status.
+- Titel: Freitext
+- Beschreibungstext: Freitext
+- Datum: mit datepicker
+- Priorität: Super wichtig, Bald erledigen, Hat Zeit
+- Status: Select: Neu, In Bearbeitung, Erledigt, Wiedervorlage, Unerledigt geschlossen
+"Wiedervorlage" soll wie "Neu" behandelt werden.
+
+Dazu folgende Tempales:
+- Eingabe und Bearbeitungsmaske
+- Detail Ansicht
+- Liste
+Die Aufgaben sollen in einer Datei todo.json im json Format abgespeichert werden.
+Die Applikation soll mit React gebaut werden.
+Als css Framework soll bootstrap eingesetzt werden.
+Der Status soll direkt in der Liste geändert werden. Die entsprechende Select-Box soll links neben den Icons stehen.
+Wird der Status in der Liste auf "Wiedervorlage" spring die Ausgabe direkt in den Bearbeiten Modus und öffnet den datepicker.
+Jetzt sortiere die Listenansicht ordentlich.  Dabei soll "Wiedervorlage" genau so behandelt werden, wie "Neu".
+Die Sortierkriterien sind:
+1. Status (Neu, Wiedervorlage, In Bearbeitung, Erledigt, Unerledigt geschlossen)
+2. Datum
+3. Priorität
+Zusätzlich zur Listenansicht soll es eine kalendarische Monatsübersicht geben, zu der umgeschaltet werden kann.
+Die Kalenderansicht so bauen, dass der Montag der erste Tag der Woche ist.
+In der Kalenderansicht sollen nur Aufgaben mit den Status Neu, In Bearbeitung und Wiedervorlage angezeigt werden.
