@@ -26,3 +26,7 @@ Zusätzlich zur Listenansicht soll es eine kalendarische Monatsübersicht geben,
 Die Kalenderansicht so bauen, dass der Montag der erste Tag der Woche ist.
 In der Kalenderansicht sollen nur Aufgaben mit den Status Neu, In Bearbeitung und Wiedervorlage angezeigt werden.
 Favicon integrieren.
+Schreibe die todo.json in die .gitignore
+Baue in der Liste zu jeder Aufgabe einen Button, der es erlaubt die Aufgabe in einem Format herunter zu laden, dass ich in den Google Kalender importieren lässt.
+Die Applikation soll mit node: 'v16.20.2' laufen.
+
