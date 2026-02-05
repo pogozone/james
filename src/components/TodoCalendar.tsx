@@ -1,6 +1,6 @@
 import React from 'react';
 import { Todo } from '../types';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TodoCalendarProps {
   todos: Todo[];

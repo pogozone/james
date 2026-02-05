@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Todo } from '../types';
-import { todoService } from '../services/todoService';
 import { Calendar, Save, X } from 'lucide-react';
 
 interface TodoFormProps {
