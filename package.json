@@ -1,6 +1,7 @@
 {
-  "name": "todo-app",
+  "name": "James",
   "version": "0.1.0",
+  "homepage": "http://geist.emaz.de/james",
   "private": true,
   "engines": {
     "node": ">=16.20.2",
