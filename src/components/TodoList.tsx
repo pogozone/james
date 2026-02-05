@@ -1,6 +1,6 @@
 import React from 'react';
 import { Todo } from '../types';
-import { Calendar, Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, Star } from 'lucide-react';
+import { Calendar, Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, Star, CalendarDays } from 'lucide-react';
 
 interface TodoListProps {
   todos: Todo[];
@@ -11,6 +11,78 @@ interface TodoListProps {
 }
 
 export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDelete, onStatusChange }) => {
+  const exportToGoogleCalendar = (todo: Todo) => {
+    try {
+      // Only export if it has a due date and valid status
+      if (!todo.dueDate || !['Neu', 'In Bearbeitung', 'Wiedervorlage'].includes(todo.status)) {
+        alert('Diese Aufgabe kann nicht in den Google Kalender exportiert werden.');
+        return;
+      }
+
+      const startDate = new Date(todo.dueDate);
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 1); // 1 hour duration
+      
+      // Format dates for iCalendar
+      const formatDate = (date: Date) => {
+        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      };
+
+      // Get priority for iCalendar
+      const getPriorityForIcal = (priority: Todo['priority']): number => {
+        switch (priority) {
+          case 'Super wichtig': return 1;
+          case 'Bald erledigen': return 5;
+          case 'Hat Zeit': return 9;
+          default: return 5;
+        }
+      };
+
+      // Get status for iCalendar
+      const getStatusForIcal = (status: Todo['status']): string => {
+        switch (status) {
+          case 'Neu': return 'TENTATIVE';
+          case 'In Bearbeitung': return 'CONFIRMED';
+          case 'Wiedervorlage': return 'TENTATIVE';
+          default: return 'CANCELLED';
+        }
+      };
+
+      const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//James Todo App//Todo Export//DE',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:${todo.id}@james-todo-app.de`,
+        `DTSTART:${formatDate(startDate)}`,
+        `DTEND:${formatDate(endDate)}`,
+        `SUMMARY:${todo.title}`,
+        `DESCRIPTION:${todo.description || ''}`,
+        `PRIORITY:${getPriorityForIcal(todo.priority)}`,
+        `STATUS:${getStatusForIcal(todo.status)}`,
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ];
+
+      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${todo.title.replace(/[^a-z0-9]/gi, '_')}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('Google Calendar file downloaded for:', todo.title);
+    } catch (error) {
+      console.error('Failed to download iCalendar:', error);
+      alert('Fehler beim Exportieren in den Google Kalender.');
+    }
+  };
   const getPriorityIcon = (priority: Todo['priority']) => {
     switch (priority) {
       case 'Super wichtig':
@@ -201,6 +273,13 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
                     title="Löschen"
                   >
                     <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => exportToGoogleCalendar(todo)}
+                    className="btn btn-outline-info btn-sm"
+                    title="In Google Kalender exportieren"
+                  >
+                    <CalendarDays className="w-4 h-4" />
                   </button>
                 </div>
               </div>
