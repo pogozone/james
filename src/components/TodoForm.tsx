@@ -120,7 +120,6 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 className="form-control"
-                min={new Date().toISOString().split('T')[0]}
               />
               <span className="input-group-text">
                 <Calendar className="w-4 h-4" />

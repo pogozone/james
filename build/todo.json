@@ -10,8 +10,9 @@
     "id": "17702060595473pjfxggyy",
     "title": "Gang frei räumen",
     "description": "",
-    "dueDate": "2026-02-10",
-    "status": "Wiedervorlage"
+    "dueDate": "2026-02-17",
+    "status": "Neu",
+    "priority": "Hat Zeit"
   },
   {
     "id": "1770210319552wee74zsuq",
@@ -38,44 +39,48 @@
     "id": "1770210384669t5gnj72u5",
     "title": "Bewerbung",
     "description": "",
-    "dueDate": "2026-02-04",
-    "status": "Neu"
+    "dueDate": "2026-02-16",
+    "status": "Wiedervorlage",
+    "priority": "Hat Zeit"
   },
   {
     "id": "1770210405309y5hon0415",
     "title": "Leserbrief an die AZ",
     "description": "AI soll mir einen Artikel auf der AZ heraussuchen, an dem ich mich abarbeiten kann.",
-    "dueDate": "2026-02-04",
+    "dueDate": "2026-02-17",
     "status": "Neu",
     "priority": "Hat Zeit"
   },
   {
     "id": "1770210432565k2b5sw628",
     "title": "Gewächshaus ausmessen",
-    "description": "",
+    "description": "180x180cm",
     "dueDate": "2026-02-05",
-    "status": "Neu"
+    "status": "Erledigt",
+    "priority": "Hat Zeit"
   },
   {
     "id": "1770210468740kbuepy8m6",
     "title": "Werksviertel: Kontakt aufnehmen",
     "description": "",
-    "dueDate": "2026-02-05",
-    "status": "Neu"
+    "dueDate": "2026-02-19",
+    "status": "Neu",
+    "priority": "Hat Zeit"
   },
   {
     "id": "17702104864697tyqvwcij",
     "title": "Fotobuch",
     "description": "",
-    "dueDate": "2026-02-05",
-    "status": "Neu"
+    "dueDate": "2026-02-20",
+    "status": "Neu",
+    "priority": "Hat Zeit"
   },
   {
     "id": "1770210515482vt0requ91",
     "title": "Arbeitsagentur: Termin vor Ort",
     "description": "",
     "dueDate": "2026-02-06",
-    "status": "Neu",
+    "status": "Erledigt",
     "priority": "Super wichtig"
   },
   {
@@ -89,22 +94,23 @@
     "id": "1770210559134e1cilfewl",
     "title": "Bier App mit bubble.io",
     "description": "",
-    "dueDate": "2026-02-06",
-    "status": "Neu"
+    "dueDate": "2026-02-24",
+    "status": "Neu",
+    "priority": "Hat Zeit"
   },
   {
     "id": "1770210609944pymx06e0d",
     "title": "Brauen mit Holger",
     "description": "Schäffler Zwickel in die Kühlung stellen.\nSommer Zwickel umdrücken. Spindeln nicht vergessen.",
     "dueDate": "2026-02-07",
-    "status": "Neu"
+    "status": "Erledigt"
   },
   {
     "id": "1770210634374yyejz062a",
     "title": "Brauen mit Alex: Sommer Briese",
     "description": "",
     "dueDate": "2026-02-15",
-    "status": "Neu",
+    "status": "Erledigt",
     "priority": "Hat Zeit"
   },
   {
@@ -112,14 +118,14 @@
     "title": "Keg besorgen",
     "description": "https://mashcamp.shop/shop/abfuellen/cornelius-keg-18l-mit-nc-anschluessen-gebraucht/",
     "dueDate": "2026-02-04",
-    "status": "Neu"
+    "status": "Erledigt"
   },
   {
     "id": "1770236729730oprs1llwj",
     "title": "Schäffler Einladung",
     "description": "Wer soll eingeladen werden:\n- Katharina\n-",
     "dueDate": "2026-02-05",
-    "status": "Neu",
+    "status": "Erledigt",
     "priority": "Hat Zeit"
   },
   {
@@ -135,7 +141,7 @@
     "title": "Sissi... Gelli Drucke fertig machen",
     "description": "",
     "dueDate": "2026-02-05",
-    "status": "Neu",
+    "status": "Erledigt",
     "priority": "Bald erledigen"
   },
   {
@@ -153,5 +159,53 @@
     "dueDate": "2026-03-11",
     "status": "Neu",
     "priority": "Bald erledigen"
+  },
+  {
+    "id": "1770812374888trc60tb00",
+    "title": "Micha, Georg: Reiseplan erstellen",
+    "description": "",
+    "dueDate": "2026-02-18",
+    "status": "Neu",
+    "priority": "Bald erledigen"
+  },
+  {
+    "id": "17708123952365rokrdbyj",
+    "title": "Abführmittel besorgen",
+    "description": "",
+    "dueDate": "2026-02-12",
+    "status": "Erledigt",
+    "priority": "Super wichtig"
+  },
+  {
+    "id": "1771029529345545wdiwu9",
+    "title": "Übernachtung in Bamberg organisieren",
+    "description": "",
+    "dueDate": "2026-02-16",
+    "status": "Neu",
+    "priority": "Super wichtig"
+  },
+  {
+    "id": "1771029639035jlkyqa9z4",
+    "title": "Jonas von der SZ schreiben",
+    "description": "Als letzter Versuch:\nWenn mir gesagt wird, an was es bei mir mangelt, kann ich zusehen, dass ich mir Wissen und Fertigkeiten schnellst möglich erwerbe. Auch über Arbeitsamtkurse.",
+    "dueDate": "2026-02-16",
+    "status": "Erledigt",
+    "priority": "Super wichtig"
+  },
+  {
+    "id": "17713392457568hspavyuc",
+    "title": "EMAZ: og:image anlegen",
+    "description": "Dazu braucht es einen neuen Tab \"social\" im Backend mit einem Eingabefeld für og:image.\nDann braucht es eine entsprechende Fallback-Kette in den Templates.",
+    "dueDate": "2026-02-17",
+    "status": "Neu",
+    "priority": "Bald erledigen"
+  },
+  {
+    "id": "1771374774344z32s1qzga",
+    "title": "Drucker Patrone (schwarz) besorgen",
+    "description": "",
+    "dueDate": "2026-02-18",
+    "status": "Neu",
+    "priority": "Hat Zeit"
   }
 ]

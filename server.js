@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3004;
 const TODO_FILE = path.join(__dirname, 'public', 'todo.json');
 
 // Middleware

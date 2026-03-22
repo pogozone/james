@@ -1,15 +1,15 @@
 import { Todo } from '../types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3004/api';
 
 export const todoService = {
   async getTodos(): Promise<Todo[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/todos`);
+      const response = await fetch(`${API_BASE_URL}/todos`);
       if (!response.ok) {
         throw new Error('Failed to fetch todos');
       }
-      return response.json();
+      return await response.json();
     } catch (error) {
       console.error('Failed to load todos:', error);
       // Fallback to localStorage if server is not available
@@ -20,7 +20,7 @@ export const todoService = {
 
   async saveTodos(todos: Todo[]): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/todos`, {
+      const response = await fetch(`${API_BASE_URL}/todos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,37 +31,23 @@ export const todoService = {
       if (!response.ok) {
         throw new Error('Failed to save todos');
       }
-
-      const result = await response.json();
-      console.log('Todos saved to server:', result);
-      
-      // Also save to localStorage as backup
-      localStorage.setItem('todos', JSON.stringify(todos));
     } catch (error) {
-      console.error('Failed to save todos to server, using localStorage:', error);
-      // Fallback to localStorage
+      console.error('Failed to save todos:', error);
+      // Fallback to localStorage if server is not available
       localStorage.setItem('todos', JSON.stringify(todos));
     }
   },
 
   downloadTodoJson(todos: Todo[]): void {
-    try {
-      const jsonString = JSON.stringify(todos, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'todo.json';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      console.log('Todo JSON file downloaded');
-    } catch (error) {
-      console.error('Failed to download JSON:', error);
-    }
+    const dataStr = JSON.stringify(todos, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `todos-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
   },
 
   generateId(): string {
