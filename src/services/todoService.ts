@@ -1,11 +1,11 @@
 import { Todo } from '../types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api' : 'http://localhost:3002/james-todos/api';
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api/' : 'http://localhost:3002/james-todos/api/';
 
 export const todoService = {
   async getTodos(): Promise<Todo[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos`);
+      const response = await fetch(`${API_BASE_URL}todos`);
       if (!response.ok) {
         throw new Error('Failed to fetch todos');
       }
@@ -20,7 +20,7 @@ export const todoService = {
 
   async saveTodos(todos: Todo[]): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos`, {
+      const response = await fetch(`${API_BASE_URL}todos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
