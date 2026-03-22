@@ -1,7 +1,7 @@
 {
   "name": "James",
   "version": "0.1.0",
-  "homepage": "http://geist.emaz.de/james",
+  "homepage": ".",
   "private": true,
   "engines": {
     "node": ">=16.20.2",
