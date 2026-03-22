@@ -7,14 +7,15 @@ export const todoService = {
     try {
       const response = await fetch(`${API_BASE_URL}todos`);
       if (!response.ok) {
-        throw new Error('Failed to fetch todos');
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
       }
       return await response.json();
     } catch (error) {
       console.error('Failed to load todos:', error);
-      // Fallback to localStorage if server is not available
-      const storedTodos = localStorage.getItem('todos');
-      return storedTodos ? JSON.parse(storedTodos) : [];
+      if (error instanceof Error) {
+        throw new Error(`MongoDB-Verbindung fehlgeschlagen: ${error.message}. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.`);
+      }
+      throw new Error('MongoDB-Verbindung fehlgeschlagen. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.');
     }
   },
 
@@ -29,12 +30,14 @@ export const todoService = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save todos');
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to save todos:', error);
-      // Fallback to localStorage if server is not available
-      localStorage.setItem('todos', JSON.stringify(todos));
+      if (error instanceof Error) {
+        throw new Error(`MongoDB-Verbindung fehlgeschlagen: ${error.message}. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.`);
+      }
+      throw new Error('MongoDB-Verbindung fehlgeschlagen. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.');
     }
   },
 
