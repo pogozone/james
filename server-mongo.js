@@ -99,6 +99,15 @@ app.get('/james-todos/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Disable trailing slash redirects
+app.use((req, res, next) => {
+  if (req.path.substr(-1) === '/' && req.path.length > 1) {
+    res.redirect(301, req.path.slice(0, -1));
+  } else {
+    next();
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`MongoDB URI: ${MONGODB_URI}`);
