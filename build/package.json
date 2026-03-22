@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "mongoose": "^6.12.0",
+    "mongoose": "^5.13.20",
     "cors": "^2.8.6"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=10.0.0"
   }
 }
