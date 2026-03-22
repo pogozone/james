@@ -1,6 +1,6 @@
 import { Todo } from '../types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api/' : 'http://localhost:3002/james-todos/api/';
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api/' : 'http://localhost:3003/james-todos/api/';
 
 export const todoService = {
   async getTodos(): Promise<Todo[]> {
@@ -13,9 +13,9 @@ export const todoService = {
     } catch (error) {
       console.error('Failed to load todos:', error);
       if (error instanceof Error) {
-        throw new Error(`MongoDB-Verbindung fehlgeschlagen: ${error.message}. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.`);
+        throw new Error(`MongoDB-Verbindung fehlgeschlagen: ${error.message}. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3003 läuft.`);
       }
-      throw new Error('MongoDB-Verbindung fehlgeschlagen. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.');
+      throw new Error('MongoDB-Verbindung fehlgeschlagen. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3003 läuft.');
     }
   },
 
@@ -35,9 +35,9 @@ export const todoService = {
     } catch (error) {
       console.error('Failed to save todos:', error);
       if (error instanceof Error) {
-        throw new Error(`MongoDB-Verbindung fehlgeschlagen: ${error.message}. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.`);
+        throw new Error(`MongoDB-Verbindung fehlgeschlagen: ${error.message}. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3003 läuft.`);
       }
-      throw new Error('MongoDB-Verbindung fehlgeschlagen. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3002 läuft.');
+      throw new Error('MongoDB-Verbindung fehlgeschlagen. Bitte überprüfen Sie, ob der MongoDB-Server auf Port 3003 läuft.');
     }
   },
 
