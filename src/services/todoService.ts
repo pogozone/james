@@ -1,6 +1,6 @@
 import { Todo } from '../types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3002/api';
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api' : 'http://localhost:3003/james-todos/api';
 
 export const todoService = {
   async getTodos(): Promise<Todo[]> {
