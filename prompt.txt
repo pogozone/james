@@ -30,3 +30,80 @@ Schreibe die todo.json in die .gitignore
 Baue in der Liste zu jeder Aufgabe einen Button, der es erlaubt die Aufgabe in einem Format herunter zu laden, dass ich in den Google Kalender importieren lässt.
 Die Applikation soll mit node: 'v16.20.2' laufen.
 
+Update to Scrum Board
+
+Version scrum 0.0.1
+- Kannst du zu dieser Applikation ein Scrum Board erstellen?
+- Backlog entspricht der Liste
+- Das Backlog wird nicht im Scrum Board angezeigt
+- Im Backlog gibt es drei Abteilungen:
+    - Aktueller Sprint
+    - Nächster Sprint
+    - Nicht zugeordnet
+- Das Backlog soll so aussehen:
+    - Erst der aktuelle Sprint.
+    - Darunter der nächste Sprint.
+    - Darunter alle übrigen Aufgaben.
+- Im Backlog werden erledigte Aufgaben nicht angezeigt
+- Aufgaben können im Backlog per drag&drop zwischen den drei Abteilungen verschoben werden
+- Wird eine Aufgabe im Backlog in den aktuellen Sprint gezogen erscheint die Aufgabe direkt auf den Scrum Board unter Ready
+- Ein Sprint dauert immer eine Woche von Sonntag bis Freitag.
+- Aufgaben, die im Sprint nicht erledigt wurden, wandern automatisch in den nächsten Sprint
+- Aus der Liste wird das Backlog
+- Das Backlog erscheint nicht auf dem Scrum Board
+- Auf dem Scrum Board: In der Spalte "Done" stehen nur Aufgaben, die im aktuellen Sprint erledigt wurden
+- Es gibt einen Reiter "Done", der alle erledigten Aufgaben zeigt
+- Die Aufgaben in "Done" sind nach Datum sortiert
+- Die Aufgaben in "Done" können wieder ins Backlog verschoben werden
+- Wenn eine Aufgabe auf dem Scrum Board verschoben wird, ändert sich auch ihr Status in der Liste
+Epic:
+- Es gibt einen Reiter "Epic", der alle Epics zeigt
+- Es können Epics erstellt werden, die dann als Hauptknoten dienen
+- Epics können Aufgaben enthalten
+- Epics können bearbeitet werden
+- Die Textarea des Epic Beschreibungstextes ist 150 Pixel hoch
+- Die Textarea des Epic Beschreibungstextes ist 800 Pixel breit. Auch im Formular zur Erstellung eines neuen Epic soll die Textarea diese Größe haben.
+- Das Textfeld für den Epic-Titel ist 400 Pixel breit. Auch im Formular zur Erstellung eines neuen Epic soll das Textfeld diese Größe haben.
+- Titel und Beschreibung des Epic sind immer oben bündig angeordnet
+- Die Buttons sind so angeordnet, dass sie sich nicht mit den Eingabefeldern überschneiden
+- Die Buttons sind rechtsbündig angeordnet
+- die Buttons befinden sich immer am unteren Rand des Formulars
+- Die Buttons befinden sich immer in der gleichen Entfernung vom unteren Rand des Formulars
+- Änderungen an Titel oder Beschreibung werden automatisch gespeichert
+- Jede Aufgabe kann einem Epic zugeordnet werden
+Aufgabe:
+- Eine Aufgabe kann mit Punkten versehen werden
+- Wird die Maske "Neue Aufgabe" aufgerufen, wird das Fälligkeitsdatum auf den nächsten Tag gesetzt
+- Die Punkte und ihre Werte:
+    - Ein Punkt: maximal eine Stunde Aufwand
+    - Zwei Punkte: maximal einen halben Tag Aufwand
+    - Drei Punkte: maximal zwei Tage Aufwand
+    - Fünf Punkte: maximal einen ganzen Sprint Aufwand
+- Wiedervorlage ist kein Status, sondern ein Flag. Bitte ändern und in der Datenbank aktualisieren
+- Wiedervorlage: Es gibt zwei Flags: repeatWeekly und repeatMonthly. Bitte ändern und in der Datenbank aktualisieren
+- Wiedervorlage:
+    - Ist eine Aufgabe auf "Wiedervorlage" gesetzt, wird sie nach Erledigung automatisch dupliziert.
+    - Das Erledigungsdatum des Duplikats mit dem Flag repeatWeekly wird automatisch um eine Woche in die Zukunft gesetzt.
+    - Das Erledigungsdatum des Duplikats mit dem Flag repeatMonthly wird automatisch um einen Monat in die Zukunft gesetzt.
+    - Das Duplikat wird in den nächsten Sprint verschoben.
+Backlog:
+- Im Backlog in der Sprintansicht werden die Punkte der Aufgaben angezeigt
+- Im Backlog in der Sprintansicht im aktuellen Sprint werden die Punkte der Aufgaben kumuliert angezeigt. Übersteigt der Wert der Punkte 40 Stunden, wird die Anzeige rot unterlegt
+- Im Backlog in der Sprintansicht im nächsten Sprint werden die Punkte der Aufgaben kumuliert angezeigt. Übersteigt der Wert der Punkte 40 Stunden, wird die Anzeige rot unterlegt
+
+
+
+ToDos:
+Auswertung:
+- Es gibt einen Reiter "Auswertung", der eine Übersicht vergangener Sprints zeigt
+- In der Auswertung steht, wie viele Punkte im Sprint erledigt wurden
+
+
+- Ready
+- In Progress
+- Review
+- Done
+
+Repetitives:
+- weekly
+- daily

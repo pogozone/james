@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Todo } from './types';
+import { ScrumStatus, SprintBucket, Todo } from './types';
 import { todoService } from './services/todoService';
 import { TodoList } from './components/TodoList';
 import { TodoForm } from './components/TodoForm';
 import { TodoDetail } from './components/TodoDetail';
 import { TodoCalendar } from './components/TodoCalendar';
-import { Plus, Download, Calendar as CalendarIcon } from 'lucide-react';
+import { ScrumBoard } from './components/ScrumBoard';
+import { DoneList } from './components/DoneList';
+import { EpicList } from './components/EpicList';
+import { Plus, Download, Calendar as CalendarIcon, Columns, CheckCircle, Layers } from 'lucide-react';
 import './App.css';
 
 type View = 'list' | 'form' | 'detail';
-type ViewMode = 'list' | 'calendar';
+type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic';
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -105,38 +108,127 @@ function App() {
       updatedTodos = [...todos, updatedTodo];
     }
 
+    if (newStatus === 'Erledigt' && (todo.repeatWeekly || todo.repeatMonthly)) {
+      const baseDate = new Date(todo.dueDate);
+      const nextDate = new Date(baseDate);
+      if (todo.repeatMonthly) {
+        nextDate.setMonth(nextDate.getMonth() + 1);
+      } else {
+        nextDate.setDate(nextDate.getDate() + 7);
+      }
+
+      const duplicate: Todo = {
+        ...todo,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        status: 'Neu',
+        dueDate: nextDate.toISOString().split('T')[0],
+        sprintBucket: 'next',
+        scrumStatus: 'Ready'
+      };
+
+      updatedTodos = [...updatedTodos, duplicate];
+    }
+
     // Always update the state first
     setTodos(updatedTodos);
 
-    // If status changed to "Wiedervorlage", open edit mode immediately
-    if (newStatus === 'Wiedervorlage') {
-      console.log('Wiedervorlage detected, switching to edit mode');
-      setSelectedTodo(updatedTodo);
-      setCurrentView('form');
-      
-      // Focus date picker after component renders
-      setTimeout(() => {
-        console.log('Attempting to focus date input');
-        if ((window as any).focusDateInput) {
-          console.log('Calling focusDateInput function');
-          (window as any).focusDateInput();
-        } else {
-          console.log('focusDateInput function not available');
-          // Fallback to direct DOM query
-          const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-          if (dateInput) {
-            console.log('Found date input, focusing directly');
-            dateInput.focus();
-            dateInput.click();
-            dateInput.showPicker?.();
-          } else {
-            console.log('No date input found');
-          }
-        }
-      }, 200);
+    // Save in background
+    todoService.saveTodos(updatedTodos).catch(error => {
+      console.error('Save failed:', error);
+    });
+  };
+
+  const handleMoveDoneToBacklog = (todo: Todo) => {
+    const updatedTodo: Todo = {
+      ...todo,
+      sprintBucket: 'none',
+      scrumStatus: 'Ready',
+      status: 'Neu'
+    };
+
+    const existingIndex = todos.findIndex(t => t.id === todo.id);
+    const updatedTodos = [...todos];
+    if (existingIndex >= 0) {
+      updatedTodos[existingIndex] = updatedTodo;
+    } else {
+      updatedTodos.push(updatedTodo);
     }
 
-    // Save in background
+    setTodos(updatedTodos);
+    todoService.saveTodos(updatedTodos).catch(error => {
+      console.error('Save failed:', error);
+    });
+  };
+
+  const handleSprintBucketChange = (todo: Todo, sprintBucket: SprintBucket) => {
+    const updatedTodo: Todo = {
+      ...todo,
+      sprintBucket,
+      scrumStatus: sprintBucket === 'current' ? 'Ready' : todo.scrumStatus
+    };
+
+    const existingIndex = todos.findIndex(t => t.id === todo.id);
+    const updatedTodos = [...todos];
+    if (existingIndex >= 0) {
+      updatedTodos[existingIndex] = updatedTodo;
+    } else {
+      updatedTodos.push(updatedTodo);
+    }
+
+    setTodos(updatedTodos);
+    todoService.saveTodos(updatedTodos).catch(error => {
+      console.error('Save failed:', error);
+    });
+  };
+
+  const handleScrumStatusChange = (todo: Todo, scrumStatus: ScrumStatus) => {
+    const statusFromScrum = (s: ScrumStatus): Todo['status'] => {
+      switch (s) {
+        case 'Ready':
+          return 'Neu';
+        case 'In Progress':
+          return 'In Bearbeitung';
+        case 'Review':
+          return 'In Bearbeitung';
+        case 'Done':
+          return 'Erledigt';
+        default:
+          return todo.status;
+      }
+    };
+
+    const derivedStatus = statusFromScrum(scrumStatus);
+    const updatedTodo: Todo = { ...todo, scrumStatus, status: derivedStatus };
+    const existingIndex = todos.findIndex(t => t.id === todo.id);
+    const updatedTodos = [...todos];
+    if (existingIndex >= 0) {
+      updatedTodos[existingIndex] = updatedTodo;
+    } else {
+      updatedTodos.push(updatedTodo);
+    }
+
+    if (derivedStatus === 'Erledigt' && (todo.repeatWeekly || todo.repeatMonthly)) {
+      const baseDate = new Date(todo.dueDate);
+      const nextDate = new Date(baseDate);
+      if (todo.repeatMonthly) {
+        nextDate.setMonth(nextDate.getMonth() + 1);
+      } else {
+        nextDate.setDate(nextDate.getDate() + 7);
+      }
+
+      const duplicate: Todo = {
+        ...todo,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        status: 'Neu',
+        dueDate: nextDate.toISOString().split('T')[0],
+        sprintBucket: 'next',
+        scrumStatus: 'Ready'
+      };
+
+      updatedTodos.push(duplicate);
+    }
+
+    setTodos(updatedTodos);
     todoService.saveTodos(updatedTodos).catch(error => {
       console.error('Save failed:', error);
     });
@@ -171,9 +263,9 @@ function App() {
                   <button
                     onClick={() => handleViewModeChange('list')}
                     className={`btn ${viewMode === 'list' ? 'btn-primary' : 'btn-outline-primary'}`}
-                    title="Listenansicht"
+                    title="Backlog"
                   >
-                    Liste
+                    Backlog
                   </button>
                   <button
                     onClick={() => handleViewModeChange('calendar')}
@@ -182,10 +274,31 @@ function App() {
                   >
                     <CalendarIcon className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => handleViewModeChange('board')}
+                    className={`btn ${viewMode === 'board' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    title="Scrum Board"
+                  >
+                    <Columns className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('done')}
+                    className={`btn ${viewMode === 'done' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    title="Done"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('epic')}
+                    className={`btn ${viewMode === 'epic' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    title="Epic"
+                  >
+                    <Layers className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
-            {currentView === 'list' && (
+            {currentView === 'list' && viewMode !== 'board' && (
               <div className="d-flex gap-2">
                 <button
                   onClick={handleExportJson}
@@ -215,6 +328,7 @@ function App() {
               onEdit={handleEditTodo}
               onDelete={handleDeleteTodo}
               onStatusChange={handleStatusChange}
+              onSprintBucketChange={handleSprintBucketChange}
             />
           )}
           
@@ -226,6 +340,16 @@ function App() {
               onStatusChange={handleStatusChange}
             />
           )}
+
+          {currentView === 'list' && viewMode === 'board' && (
+            <ScrumBoard todos={todos} onScrumStatusChange={handleScrumStatusChange} />
+          )}
+
+          {currentView === 'list' && viewMode === 'done' && (
+            <DoneList todos={todos} onMoveToBacklog={handleMoveDoneToBacklog} />
+          )}
+
+          {currentView === 'list' && viewMode === 'epic' && <EpicList todos={todos} />}
 
           {currentView === 'form' && (
             <TodoForm

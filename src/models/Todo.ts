@@ -18,13 +18,26 @@ const TodoSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Neu', 'In Bearbeitung', 'Erledigt', 'Wiedervorlage', 'Unerledigt geschlossen'],
+    enum: ['Neu', 'In Bearbeitung', 'Erledigt', 'Unerledigt geschlossen'],
     default: 'Neu'
   },
   priority: {
     type: String,
     enum: ['Super wichtig', 'Bald erledigen', 'Hat Zeit'],
     default: 'Hat Zeit'
+  },
+  points: {
+    type: Number,
+    enum: [1, 2, 3, 5, 8],
+    required: false
+  },
+  repeatWeekly: {
+    type: Boolean,
+    default: false
+  },
+  repeatMonthly: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

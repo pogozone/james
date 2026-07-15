@@ -17,8 +17,6 @@ export const TodoDetail: React.FC<TodoDetailProps> = ({ todo, onEdit, onBack }) 
         return <Clock className="w-5 h-5 text-primary" />;
       case 'Erledigt':
         return <CheckCircle className="w-5 h-5 text-success" />;
-      case 'Wiedervorlage':
-        return <AlertCircle className="w-5 h-5 text-warning" />;
       case 'Unerledigt geschlossen':
         return <AlertCircle className="w-5 h-5 text-danger" />;
       default:
@@ -34,8 +32,6 @@ export const TodoDetail: React.FC<TodoDetailProps> = ({ todo, onEdit, onBack }) 
         return 'bg-primary';
       case 'Erledigt':
         return 'bg-success';
-      case 'Wiedervorlage':
-        return 'bg-warning';
       case 'Unerledigt geschlossen':
         return 'bg-danger';
       default:
@@ -81,6 +77,15 @@ export const TodoDetail: React.FC<TodoDetailProps> = ({ todo, onEdit, onBack }) 
               {getStatusIcon(todo.status)}
               <span>{todo.status}</span>
             </span>
+            {typeof todo.points === 'number' ? (
+              <span className="badge text-bg-dark" title="Punkte">{todo.points}P</span>
+            ) : null}
+            {todo.repeatWeekly ? (
+              <span className="badge text-bg-warning" title="repeatWeekly">repeatWeekly</span>
+            ) : null}
+            {todo.repeatMonthly ? (
+              <span className="badge text-bg-warning" title="repeatMonthly">repeatMonthly</span>
+            ) : null}
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Todo } from '../types';
+import { Epic, Todo } from '../types';
+import { epicService } from '../services/epicService';
 import { Calendar, Save, X } from 'lucide-react';
 
 interface TodoFormProps {
@@ -12,10 +13,20 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
   const [formData, setFormData] = useState<Partial<Todo>>({
     title: '',
     description: '',
-    dueDate: new Date().toISOString().split('T')[0],
+    dueDate: (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().split('T')[0];
+    })(),
     status: 'Neu',
-    priority: 'Hat Zeit'
+    priority: 'Hat Zeit',
+    points: undefined,
+    repeatWeekly: false,
+    repeatMonthly: false,
+    epicId: undefined
   });
+
+  const [epics, setEpics] = useState<Epic[]>([]);
   
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,6 +35,42 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
       setFormData(todo);
     }
   }, [todo]);
+
+  useEffect(() => {
+    epicService.getEpics().then(setEpics).catch(err => {
+      console.error('Failed to load epics:', err);
+      setEpics([]);
+    });
+  }, []);
+
+  const getAutoSprintBucket = (dueDateStr: string, status: Todo['status']): Todo['sprintBucket'] => {
+    if (status === 'Erledigt' || status === 'Unerledigt geschlossen') return 'none';
+
+    const due = new Date(dueDateStr);
+    if (Number.isNaN(due.getTime())) return 'none';
+
+    const startOfWeek = (d: Date) => {
+      const x = new Date(d);
+      x.setHours(0, 0, 0, 0);
+      const day = x.getDay();
+      const diffToMonday = (day + 6) % 7;
+      x.setDate(x.getDate() - diffToMonday);
+      return x;
+    };
+
+    const inRange = (d: Date, start: Date, endExclusive: Date) => d >= start && d < endExclusive;
+
+    const now = new Date();
+    const currentStart = startOfWeek(now);
+    const nextStart = new Date(currentStart);
+    nextStart.setDate(nextStart.getDate() + 7);
+    const nextEnd = new Date(nextStart);
+    nextEnd.setDate(nextEnd.getDate() + 7);
+
+    if (inRange(due, currentStart, nextStart)) return 'current';
+    if (inRange(due, nextStart, nextEnd)) return 'next';
+    return 'none';
+  };
 
   // Make focus function globally available
   useEffect(() => {
@@ -60,7 +107,22 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
       description: formData.description?.trim() || '',
       dueDate: formData.dueDate || new Date().toISOString().split('T')[0],
       status: formData.status as Todo['status'],
-      priority: formData.priority || 'Hat Zeit'
+      priority: formData.priority || 'Hat Zeit',
+      points: formData.points,
+      repeatWeekly: Boolean(formData.repeatWeekly),
+      repeatMonthly: Boolean(formData.repeatMonthly),
+      sprintBucket: (() => {
+        const due = formData.dueDate || new Date().toISOString().split('T')[0];
+        const status = formData.status as Todo['status'];
+        return getAutoSprintBucket(due, status);
+      })(),
+      scrumStatus: (() => {
+        const due = formData.dueDate || new Date().toISOString().split('T')[0];
+        const status = formData.status as Todo['status'];
+        const bucket = getAutoSprintBucket(due, status);
+        return bucket === 'current' ? 'Ready' : (formData.scrumStatus || 'Ready');
+      })(),
+      epicId: formData.epicId || undefined
     };
 
     onSave(todoToSave);
@@ -139,9 +201,35 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
               <option value="Neu">Neu</option>
               <option value="In Bearbeitung">In Bearbeitung</option>
               <option value="Erledigt">Erledigt</option>
-              <option value="Wiedervorlage">Wiedervorlage</option>
               <option value="Unerledigt geschlossen">Unerledigt geschlossen</option>
             </select>
+          </div>
+
+          <div className="mb-3">
+            <div className="form-check">
+              <input
+                id="repeatWeekly"
+                type="checkbox"
+                className="form-check-input"
+                checked={Boolean(formData.repeatWeekly)}
+                onChange={(e) => setFormData({ ...formData, repeatWeekly: e.target.checked })}
+              />
+              <label className="form-check-label" htmlFor="repeatWeekly">
+                repeatWeekly
+              </label>
+            </div>
+            <div className="form-check">
+              <input
+                id="repeatMonthly"
+                type="checkbox"
+                className="form-check-input"
+                checked={Boolean(formData.repeatMonthly)}
+                onChange={(e) => setFormData({ ...formData, repeatMonthly: e.target.checked })}
+              />
+              <label className="form-check-label" htmlFor="repeatMonthly">
+                repeatMonthly
+              </label>
+            </div>
           </div>
 
           <div className="mb-3">
@@ -156,6 +244,47 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
               <option value="Super wichtig">Super wichtig</option>
               <option value="Bald erledigen">Bald erledigen</option>
               <option value="Hat Zeit">Hat Zeit</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Punkte</label>
+            <select
+              value={formData.points?.toString() || ''}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (!raw) {
+                  setFormData({ ...formData, points: undefined });
+                  return;
+                }
+                const parsed = Number(raw);
+                const allowed = parsed === 1 || parsed === 2 || parsed === 3 || parsed === 5 || parsed === 8;
+                setFormData({ ...formData, points: allowed ? (parsed as Todo['points']) : undefined });
+              }}
+              className="form-select"
+            >
+              <option value="">(keine)</option>
+              <option value="1">1 (max. 1 Stunde)</option>
+              <option value="2">2 (max. 1/2 Tag)</option>
+              <option value="3">3 (max. 1 Tag)</option>
+              <option value="5">5 (max. 2 Tage)</option>
+              <option value="8">8 (max. 1 Sprint)</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Epic</label>
+            <select
+              value={formData.epicId || ''}
+              onChange={(e) => setFormData({ ...formData, epicId: e.target.value || undefined })}
+              className="form-select"
+            >
+              <option value="">(kein Epic)</option>
+              {epics.map(epic => (
+                <option key={epic.id} value={epic.id}>
+                  {epic.title}
+                </option>
+              ))}
             </select>
           </div>
 

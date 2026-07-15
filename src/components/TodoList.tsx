@@ -1,20 +1,44 @@
 import React from 'react';
-import { Todo } from '../types';
+import {
+  DragDropContext,
+  Draggable,
+  DraggableProvided,
+  DraggableStateSnapshot,
+  Droppable,
+  DroppableProvided,
+  DroppableStateSnapshot,
+  DropResult
+} from '@hello-pangea/dnd';
+import { SprintBucket, Todo } from '../types';
 import { Calendar, Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, Star, CalendarDays } from 'lucide-react';
 
-interface TodoListProps {
+export interface TodoListProps {
   todos: Todo[];
   onView: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (id: string) => void;
   onStatusChange: (todo: Todo, newStatus: Todo['status']) => void;
+  onSprintBucketChange: (todo: Todo, sprintBucket: SprintBucket) => void;
 }
 
-export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDelete, onStatusChange }) => {
+const BUCKETS: { key: SprintBucket; title: string }[] = [
+  { key: 'current', title: 'Aktueller Sprint' },
+  { key: 'next', title: 'Nächster Sprint' },
+  { key: 'none', title: 'Nicht zugeordnet' }
+];
+
+export function TodoList({
+  todos,
+  onView,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  onSprintBucketChange
+}: TodoListProps) {
   const exportToGoogleCalendar = (todo: Todo) => {
     try {
       // Only export if it has a due date and valid status
-      if (!todo.dueDate || !['Neu', 'In Bearbeitung', 'Wiedervorlage'].includes(todo.status)) {
+      if (!todo.dueDate || !['Neu', 'In Bearbeitung'].includes(todo.status)) {
         alert('Diese Aufgabe kann nicht in den Google Kalender exportiert werden.');
         return;
       }
@@ -26,7 +50,7 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
       // Format dates for iCalendar
       const formatDate = (date: Date) => {
         return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-      };
+      }
 
       // Get priority for iCalendar
       const getPriorityForIcal = (priority: Todo['priority']): number => {
@@ -43,7 +67,6 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
         switch (status) {
           case 'Neu': return 'TENTATIVE';
           case 'In Bearbeitung': return 'CONFIRMED';
-          case 'Wiedervorlage': return 'TENTATIVE';
           default: return 'CANCELLED';
         }
       };
@@ -116,8 +139,6 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
         return <Clock className="w-4 h-4 text-primary" />;
       case 'Erledigt':
         return <CheckCircle className="w-4 h-4 text-success" />;
-      case 'Wiedervorlage':
-        return <AlertCircle className="w-4 h-4 text-warning" />;
       case 'Unerledigt geschlossen':
         return <AlertCircle className="w-4 h-4 text-danger" />;
       default:
@@ -133,8 +154,6 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
         return 'bg-primary';
       case 'Erledigt':
         return 'bg-success';
-      case 'Wiedervorlage':
-        return 'bg-warning';
       case 'Unerledigt geschlossen':
         return 'bg-danger';
       default:
@@ -151,18 +170,47 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
     });
   };
 
-  const isOverdue = (todo: Todo) => {
-    return new Date(todo.dueDate) < new Date() && todo.status !== 'Erledigt' && todo.status !== 'Unerledigt geschlossen' && todo.status !== 'Wiedervorlage';
+  const isDueToday = (todo: Todo) => {
+    if (todo.status === 'Erledigt' || todo.status === 'Unerledigt geschlossen') return false;
+    const due = new Date(todo.dueDate);
+    const now = new Date();
+    return (
+      due.getFullYear() === now.getFullYear() &&
+      due.getMonth() === now.getMonth() &&
+      due.getDate() === now.getDate()
+    );
   };
 
-  const sortedTodos = [...todos].sort((a, b) => {
-    // Sort by status first (Neu, Wiedervorlage, In Bearbeitung, Erledigt, Unerledigt geschlossen)
+  const isOverdue = (todo: Todo) => {
+    return new Date(todo.dueDate) < new Date() && todo.status !== 'Erledigt' && todo.status !== 'Unerledigt geschlossen';
+  };
+
+  const pointsToHours = (points?: Todo['points']): number => {
+    switch (points) {
+      case 1:
+        return 1;
+      case 2:
+        return 4;
+      case 3:
+        return 8;
+      case 5:
+        return 16;
+      case 8:
+        return 40;
+      default:
+        return 0;
+    }
+  };
+
+  const backlogTodos = todos.filter(t => t.status !== 'Erledigt' && t.status !== 'Unerledigt geschlossen');
+
+  const sortedTodos = [...backlogTodos].sort((a, b) => {
+    // Sort by status first (Neu, In Bearbeitung, Erledigt, Unerledigt geschlossen)
     const statusOrder = { 
       'Neu': 0, 
-      'Wiedervorlage': 1,  // After Neu
-      'In Bearbeitung': 2, 
-      'Erledigt': 3,
-      'Unerledigt geschlossen': 4
+      'In Bearbeitung': 1, 
+      'Erledigt': 2,
+      'Unerledigt geschlossen': 3
     };
     const statusDiff = statusOrder[a.status] - statusOrder[b.status];
     if (statusDiff !== 0) return statusDiff;
@@ -180,7 +228,40 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
-  if (todos.length === 0) {
+  const groupedByBucket: Record<SprintBucket, Todo[]> = {
+    current: [],
+    next: [],
+    none: []
+  };
+
+  for (const todo of sortedTodos) {
+    const bucket: SprintBucket = (todo.sprintBucket || 'none') as SprintBucket;
+    groupedByBucket[bucket].push(todo);
+  }
+
+  const totalHoursByBucket: Record<SprintBucket, number> = {
+    current: 0,
+    next: 0,
+    none: 0
+  };
+
+  for (const bucketKey of Object.keys(groupedByBucket) as SprintBucket[]) {
+    totalHoursByBucket[bucketKey] = groupedByBucket[bucketKey].reduce((sum, t) => sum + pointsToHours(t.points), 0);
+  }
+
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    const destBucket = destination.droppableId as SprintBucket;
+    const todo = todos.find(t => t.id === draggableId);
+    if (!todo) return;
+
+    onSprintBucketChange(todo, destBucket);
+  };
+
+  if (sortedTodos.length === 0) {
     return (
       <div className="text-center py-5">
         <div className="text-muted mb-4">
@@ -192,102 +273,158 @@ export const TodoList: React.FC<TodoListProps> = ({ todos, onView, onEdit, onDel
     );
   }
 
-  return (
-    <>
-      <div>
-        <h2 className="h2 mb-4">Aufgaben</h2>
-        
-        {sortedTodos.map((todo) => (
-          <div
-            key={todo.id}
-            className={`card shadow-sm mb-3 ${isOverdue(todo) ? 'border-start border-4 border-danger' : ''} ${todo.priority === 'Super wichtig' ? 'super-important' : ''}`}
-          >
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div className="flex-grow-1">
-                  <div className="d-flex align-items-center gap-2 mb-2">
-                    <h5 className="card-title mb-0">{todo.title}</h5>
-                    <span className={`badge d-flex align-items-center gap-1 text-white ${getStatusColor(todo.status)}`}>
-                      {getStatusIcon(todo.status)}
-                      <span>{todo.status}</span>
-                    </span>
-                    <span className={`d-flex align-items-center gap-1 ${getPriorityColor(todo.priority)}`}>
-                      {getPriorityIcon(todo.priority)}
-                      <span className="small">{todo.priority}</span>
-                    </span>
-                  </div>
-                  
-                  {todo.description && (
-                    <p className="card-text text-muted mb-3" style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>
-                      {todo.description}
-                    </p>
-                  )}
-                  
-                  <div className="d-flex align-items-center gap-3 text-muted small">
-                    <div className="d-flex align-items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span className={isOverdue(todo) ? 'text-danger fw-semibold' : ''}>
-                        {formatDate(todo.dueDate)}
-                        {isOverdue(todo) && ' (überfällig)'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="d-flex gap-2 ms-3 align-items-center">
-                  <select
-                    value={todo.status}
-                    onChange={(e) => onStatusChange(todo, e.target.value as Todo['status'])}
-                    className="form-select form-select-sm"
-                    style={{ minWidth: '140px' }}
-                    title="Status ändern"
-                  >
-                    <option value="Neu">Neu</option>
-                    <option value="In Bearbeitung">In Bearbeitung</option>
-                    <option value="Erledigt">Erledigt</option>
-                    <option value="Wiedervorlage">Wiedervorlage</option>
-                    <option value="Unerledigt geschlossen">Unerledigt geschlossen</option>
-                  </select>
-                  <button
-                    onClick={() => onView(todo)}
-                    className="btn btn-outline-primary btn-sm"
-                    title="Anzeigen"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onEdit(todo)}
-                    className="btn btn-outline-secondary btn-sm"
-                    title="Bearbeiten"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(todo.id)}
-                    className="btn btn-outline-danger btn-sm"
-                    title="Löschen"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => exportToGoogleCalendar(todo)}
-                    className="btn btn-outline-info btn-sm"
-                    title="In Google Kalender exportieren"
-                  >
-                    <CalendarDays className="w-4 h-4" />
-                  </button>
-                </div>
+  const renderTodoCard = (todo: Todo, provided?: DraggableProvided, snapshot?: DraggableStateSnapshot) => (
+    <div
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      {...provided?.dragHandleProps}
+      className={`card shadow-sm mb-2 ${isOverdue(todo) ? 'border-start border-4 border-danger' : ''} ${todo.priority === 'Super wichtig' ? 'super-important' : ''} ${snapshot?.isDragging ? 'shadow' : ''}`}
+      style={{
+        ...(provided?.draggableProps.style || {}),
+        backgroundColor: isDueToday(todo)
+          ? 'rgba(144, 238, 144, 0.35)'
+          : isOverdue(todo)
+            ? 'rgba(220, 53, 69, 0.10)'
+            : undefined
+      }}
+    >
+      <div className="card-body">
+        <div className="d-flex justify-content-between align-items-start">
+          <div className="flex-grow-1">
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <h5 className="card-title mb-0">{todo.title}</h5>
+              {typeof todo.points === 'number' ? (
+                <span className="badge text-bg-dark" title="Punkte">{todo.points}P</span>
+              ) : null}
+              {todo.repeatWeekly ? (
+                <span className="badge text-bg-warning" title="repeatWeekly">W</span>
+              ) : null}
+              {todo.repeatMonthly ? (
+                <span className="badge text-bg-warning" title="repeatMonthly">M</span>
+              ) : null}
+              <span className={`badge d-flex align-items-center gap-1 text-white ${getStatusColor(todo.status)}`}>
+                {getStatusIcon(todo.status)}
+                <span>{todo.status}</span>
+              </span>
+              <span className={`d-flex align-items-center gap-1 ${getPriorityColor(todo.priority)}`}>
+                {getPriorityIcon(todo.priority)}
+                <span className="small">{todo.priority}</span>
+              </span>
+            </div>
+
+            {todo.description && (
+              <p
+                className="card-text text-muted mb-3"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}
+              >
+                {todo.description}
+              </p>
+            )}
+
+            <div className="d-flex align-items-center gap-3 text-muted small">
+              <div className="d-flex align-items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span className={isOverdue(todo) || isDueToday(todo) ? 'text-danger fw-semibold' : ''}>
+                  {formatDate(todo.dueDate)}
+                  {isDueToday(todo) ? ' (heute)' : isOverdue(todo) ? ' (überfällig)' : ''}
+                </span>
               </div>
             </div>
           </div>
-        ))}
+
+          <div className="d-flex gap-2 ms-3 align-items-center">
+            <select
+              value={todo.status}
+              onChange={(e) => onStatusChange(todo, e.target.value as Todo['status'])}
+              className="form-select form-select-sm"
+              style={{ minWidth: '140px' }}
+              title="Status ändern"
+            >
+              <option value="Neu">Neu</option>
+              <option value="In Bearbeitung">In Bearbeitung</option>
+              <option value="Erledigt">Erledigt</option>
+              <option value="Unerledigt geschlossen">Unerledigt geschlossen</option>
+            </select>
+            <button onClick={() => onView(todo)} className="btn btn-outline-primary btn-sm" title="Anzeigen">
+              <Eye className="w-4 h-4" />
+            </button>
+            <button onClick={() => onEdit(todo)} className="btn btn-outline-secondary btn-sm" title="Bearbeiten">
+              <Edit className="w-4 h-4" />
+            </button>
+            <button onClick={() => onDelete(todo.id)} className="btn btn-outline-danger btn-sm" title="Löschen">
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => exportToGoogleCalendar(todo)}
+              className="btn btn-outline-info btn-sm"
+              title="In Google Kalender exportieren"
+            >
+              <CalendarDays className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
-      
+    </div>
+  );
+
+  return (
+    <>
+      <div>
+        <h2 className="h2 mb-4">Backlog</h2>
+
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="d-flex flex-column gap-3">
+            {BUCKETS.map(bucket => (
+              <div key={bucket.key}>
+                <div className="card">
+                  <div className="card-header bg-white">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <strong>{bucket.title}</strong>
+                      <div className="d-flex align-items-center gap-2">
+                        {bucket.key === 'current' || bucket.key === 'next' ? (
+                          <span
+                            className={`badge ${totalHoursByBucket[bucket.key] > 40 ? 'text-bg-danger' : 'text-bg-light text-dark border'}`}
+                            title="Kumulierte Stunden (aus Punkten)"
+                          >
+                            {totalHoursByBucket[bucket.key]}h
+                          </span>
+                        ) : null}
+                        <span className="badge text-bg-secondary">{groupedByBucket[bucket.key].length}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Droppable droppableId={bucket.key}>
+                    {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`card-body p-2 ${snapshot.isDraggingOver ? 'bg-light' : ''}`}
+                        style={{ minHeight: 200 }}
+                      >
+                        {groupedByBucket[bucket.key].map((todo, index) => (
+                          <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                            {(dragProvided: DraggableProvided, dragSnapshot: DraggableStateSnapshot) =>
+                              renderTodoCard(todo, dragProvided, dragSnapshot)
+                            }
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DragDropContext>
+      </div>
+
       <style>{`
         .super-important {
           animation: blink 1s infinite;

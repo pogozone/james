@@ -32,7 +32,7 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
     
     const filteredTodos = todos.filter(todo => 
       todo.dueDate === dateString && 
-      (todo.status === 'Neu' || todo.status === 'In Bearbeitung' || todo.status === 'Wiedervorlage')
+      (todo.status === 'Neu' || todo.status === 'In Bearbeitung')
     );
     // Debug: Log the first few todos for verification
     if (date.getDate() <= 8 && filteredTodos.length > 0) {
@@ -61,8 +61,6 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
         return 'bg-primary';
       case 'Erledigt':
         return 'bg-success';
-      case 'Wiedervorlage':
-        return 'bg-warning';
       case 'Unerledigt geschlossen':
         return 'bg-danger';
       default:
