@@ -74,11 +74,17 @@ Epic:
 Aufgabe:
 - Eine Aufgabe kann mit Punkten versehen werden
 - Wird die Maske "Neue Aufgabe" aufgerufen, wird das Fälligkeitsdatum auf den nächsten Tag gesetzt
+- Fällt das Fälligkeitsdatum einer Aufgabe in die Zeit des aktuellen Sprints, dann wird die Aufgabe automatisch in den aktuellen Sprint verschoben
+- Fällt das Fälligkeitsdatum einer Aufgabe in die Zeit des nächsten Sprints, dann wird die Aufgabe automatisch in den nächsten Sprint verschoben
+- Ist das Fälligkeitsdatum das aktuelle Datum, ist die Hintergrundfarbe der Aufgabe - im Backlog und auf dem Scrum Board - lindgrün
+- Ist das Fälligkeitsdatum das aktuelle Datumwird im Backlog "(heute)" statt "(überfällig)" angezeigt
+- Liegt das Fälligkeitsdatum in der Vergangenheit, ist die Hintergrundfarbe der Aufgabe - im Backlog und auf dem Scrum Board - transparent hellrot
 - Die Punkte und ihre Werte:
     - Ein Punkt: maximal eine Stunde Aufwand
     - Zwei Punkte: maximal einen halben Tag Aufwand
-    - Drei Punkte: maximal zwei Tage Aufwand
-    - Fünf Punkte: maximal einen ganzen Sprint Aufwand
+    - Drei Punkte: maximal ein Tag Aufwand
+    - Fünf Punkte: maximal zwei Tage Aufwand
+    - Acht Punkte: maximal einen ganzen Sprint Aufwand
 - Wiedervorlage ist kein Status, sondern ein Flag. Bitte ändern und in der Datenbank aktualisieren
 - Wiedervorlage: Es gibt zwei Flags: repeatWeekly und repeatMonthly. Bitte ändern und in der Datenbank aktualisieren
 - Wiedervorlage:
@@ -91,7 +97,10 @@ Backlog:
 - Im Backlog in der Sprintansicht im aktuellen Sprint werden die Punkte der Aufgaben kumuliert angezeigt. Übersteigt der Wert der Punkte 40 Stunden, wird die Anzeige rot unterlegt
 - Im Backlog in der Sprintansicht im nächsten Sprint werden die Punkte der Aufgaben kumuliert angezeigt. Übersteigt der Wert der Punkte 40 Stunden, wird die Anzeige rot unterlegt
 
-
+Version scrum 0.0.2
+- Priorität "Super wichtig"  soll auf dem Scrum Board genau so hervorgehoben dargestellt werden, wie im Backlog
+- Auf dem Scrum Board sollen Aufgaben in der Spalte "Done" nicht mehr hervorgehoben dargestellt werden
+- Ist eine Aufgabe einem Sprint zugewiesen, dann soll sie auch beim erneuten Speichern im gleichen Sprint landen und auch bei anders lautendem Fälligkeitsdatum nicht aus dem Sprint verschoben werden
 
 ToDos:
 Auswertung:

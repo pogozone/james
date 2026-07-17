@@ -101,27 +101,35 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
       return;
     }
 
+    const status = formData.status as Todo['status'];
+    const due = formData.dueDate || new Date().toISOString().split('T')[0];
+
+    const existingBucket = (todo?.sprintBucket || formData.sprintBucket || 'none') as Todo['sprintBucket'];
+    const shouldPreserveBucket = existingBucket === 'current' || existingBucket === 'next';
+
+    const finalSprintBucket: Todo['sprintBucket'] = shouldPreserveBucket
+      ? existingBucket
+      : getAutoSprintBucket(due, status);
+
+    const finalScrumStatus: Todo['scrumStatus'] = (() => {
+      if (finalSprintBucket === 'current') {
+        return (formData.scrumStatus || 'Ready') as Todo['scrumStatus'];
+      }
+      return (formData.scrumStatus || 'Ready') as Todo['scrumStatus'];
+    })();
+
     const todoToSave: Todo = {
       id: todo?.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
       title: formData.title.trim(),
       description: formData.description?.trim() || '',
-      dueDate: formData.dueDate || new Date().toISOString().split('T')[0],
-      status: formData.status as Todo['status'],
+      dueDate: due,
+      status,
       priority: formData.priority || 'Hat Zeit',
       points: formData.points,
       repeatWeekly: Boolean(formData.repeatWeekly),
       repeatMonthly: Boolean(formData.repeatMonthly),
-      sprintBucket: (() => {
-        const due = formData.dueDate || new Date().toISOString().split('T')[0];
-        const status = formData.status as Todo['status'];
-        return getAutoSprintBucket(due, status);
-      })(),
-      scrumStatus: (() => {
-        const due = formData.dueDate || new Date().toISOString().split('T')[0];
-        const status = formData.status as Todo['status'];
-        const bucket = getAutoSprintBucket(due, status);
-        return bucket === 'current' ? 'Ready' : (formData.scrumStatus || 'Ready');
-      })(),
+      sprintBucket: finalSprintBucket,
+      scrumStatus: finalScrumStatus,
       epicId: formData.epicId || undefined
     };
 

@@ -115,14 +115,16 @@ export function ScrumBoard({ todos, onScrumStatusChange }: ScrumBoardProps) {
                               ref={dragProvided.innerRef}
                               {...dragProvided.draggableProps}
                               {...dragProvided.dragHandleProps}
-                              className={`card mb-2 ${dragSnapshot.isDragging ? 'shadow' : ''}`}
+                              className={`card mb-2 ${col.key === 'Done' ? '' : (item.priority === 'Super wichtig' ? 'super-important' : '')} ${dragSnapshot.isDragging ? 'shadow' : ''}`}
                               style={{
                                 ...(dragProvided.draggableProps.style || {}),
-                                backgroundColor: isDueToday(item)
-                                  ? 'rgba(144, 238, 144, 0.35)'
-                                  : isOverdue(item)
-                                    ? 'rgba(220, 53, 69, 0.10)'
-                                    : undefined
+                                backgroundColor: col.key === 'Done'
+                                  ? undefined
+                                  : isDueToday(item)
+                                    ? 'rgba(144, 238, 144, 0.35)'
+                                    : isOverdue(item)
+                                      ? 'rgba(220, 53, 69, 0.10)'
+                                      : undefined
                               }}
                             >
                               <div className="card-body py-2 px-3">
@@ -163,6 +165,23 @@ export function ScrumBoard({ todos, onScrumStatusChange }: ScrumBoardProps) {
           ))}
         </div>
       </DragDropContext>
+
+      <style>{`
+        .super-important {
+          animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+          0%, 50% {
+            background-color: #fff5f5;
+            border-left: 4px solid #dc3545;
+          }
+          51%, 100% {
+            background-color: white;
+            border-left: 4px solid #dc3545;
+          }
+        }
+      `}</style>
     </div>
   );
 }
