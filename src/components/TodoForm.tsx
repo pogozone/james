@@ -119,7 +119,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
     })();
 
     const todoToSave: Todo = {
-      id: todo?.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: todo?.id || '',
       title: formData.title.trim(),
       description: formData.description?.trim() || '',
       dueDate: due,

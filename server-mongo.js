@@ -112,6 +112,38 @@ mongoose.connection.once('open', async () => {
     if (migrated2) {
       console.log('Migrated wiedervorlage flag to repeatWeekly:', migrated2);
     }
+
+    // BoardItems are legacy; Todo is the single source of truth.
+    // Clean up orphaned and duplicate BoardItems to keep DB tidy.
+    try {
+      const todos = await Todo.find({}, { _id: 1 }).lean();
+      const todoIdSet = new Set(todos.map(t => t._id.toString()));
+      const items = await BoardItem.find().sort({ createdAt: 1 }).lean();
+
+      const idsToDelete = [];
+      const seenByTodoId = new Set();
+
+      for (const item of items) {
+        const todoId = item.todoId ? item.todoId.toString() : '';
+        if (!todoId || !todoIdSet.has(todoId)) {
+          idsToDelete.push(item._id);
+          continue;
+        }
+        // keep only one BoardItem per todoId
+        if (seenByTodoId.has(todoId)) {
+          idsToDelete.push(item._id);
+          continue;
+        }
+        seenByTodoId.add(todoId);
+      }
+
+      if (idsToDelete.length > 0) {
+        await BoardItem.deleteMany({ _id: { $in: idsToDelete } });
+        console.log('Cleaned up BoardItems (orphans/duplicates):', idsToDelete.length);
+      }
+    } catch (error) {
+      console.error('Failed to clean up BoardItems:', error);
+    }
   } catch (error) {
     console.error('Failed to migrate Wiedervorlage flags:', error);
   }
@@ -269,38 +301,159 @@ app.get('/james-todos/api/todos', async (req, res) => {
   }
 });
 
-// POST todos (save/update)
+// POST todos (create)
 app.post('/james-todos/api/todos', async (req, res) => {
   try {
-    const todos = req.body;
-    
-    // Clear existing todos
-    await Todo.deleteMany({});
-    
-    // Insert new todos
-    const todosToSave = todos.map(todo => ({
-      title: todo.title,
-      description: todo.description || '',
+    const todo = req.body || {};
+    if (!todo.title || typeof todo.title !== 'string' || !todo.title.trim()) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+    if (!todo.dueDate || typeof todo.dueDate !== 'string') {
+      return res.status(400).json({ error: 'dueDate is required' });
+    }
+
+    const normalizedPoints = (() => {
+      const p = typeof todo.points === 'number' ? todo.points : Number(todo.points);
+      return [1, 2, 3, 5, 8].includes(p) ? p : undefined;
+    })();
+
+    const created = await Todo.create({
+      title: todo.title.trim(),
+      description: typeof todo.description === 'string' ? todo.description : '',
       dueDate: todo.dueDate,
-      status: todo.status === 'Wiedervorlage' ? 'Neu' : todo.status,
-      priority: todo.priority,
-      points: (() => {
-        const p = typeof todo.points === 'number' ? todo.points : Number(todo.points);
-        return [1, 2, 3, 5, 8].includes(p) ? p : undefined;
-      })(),
+      status: todo.status === 'Wiedervorlage' ? 'Neu' : (todo.status || 'Neu'),
+      priority: todo.priority || 'Hat Zeit',
+      points: normalizedPoints,
       repeatWeekly: Boolean(todo.repeatWeekly) || todo.status === 'Wiedervorlage',
       repeatMonthly: Boolean(todo.repeatMonthly),
       sprintBucket: todo.sprintBucket || 'none',
       scrumStatus: todo.scrumStatus || 'Ready',
       epicId: todo.epicId || null
-    }));
-    
-    await Todo.insertMany(todosToSave);
-    console.log('Todos saved to MongoDB:', todos.length, 'items');
-    res.json({ success: true, count: todos.length });
+    });
+
+    res.status(201).json({
+      id: created._id.toString(),
+      title: created.title,
+      description: created.description,
+      dueDate: created.dueDate,
+      status: created.status,
+      priority: created.priority,
+      points: typeof created.points === 'number' ? created.points : undefined,
+      repeatWeekly: Boolean(created.repeatWeekly),
+      repeatMonthly: Boolean(created.repeatMonthly),
+      sprintBucket: created.sprintBucket,
+      scrumStatus: created.scrumStatus,
+      epicId: created.epicId ? created.epicId.toString() : undefined
+    });
   } catch (error) {
-    console.error('Error saving todos:', error);
-    res.status(500).json({ error: 'Failed to save todos' });
+    console.error('Error creating todo:', error);
+    res.status(500).json({ error: 'Failed to create todo' });
+  }
+});
+
+// PUT todo (update)
+app.put('/james-todos/api/todos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body || {};
+
+    const allowed = {};
+    if (typeof updates.title === 'string') allowed.title = updates.title.trim();
+    if (typeof updates.description === 'string') allowed.description = updates.description;
+    if (typeof updates.dueDate === 'string') allowed.dueDate = updates.dueDate;
+    if (typeof updates.status === 'string') allowed.status = updates.status === 'Wiedervorlage' ? 'Neu' : updates.status;
+    if (typeof updates.priority === 'string') allowed.priority = updates.priority;
+    if (typeof updates.points === 'number' || typeof updates.points === 'string') {
+      const p = typeof updates.points === 'number' ? updates.points : Number(updates.points);
+      allowed.points = [1, 2, 3, 5, 8].includes(p) ? p : undefined;
+    }
+    if (typeof updates.repeatWeekly === 'boolean') allowed.repeatWeekly = updates.repeatWeekly;
+    if (typeof updates.repeatMonthly === 'boolean') allowed.repeatMonthly = updates.repeatMonthly;
+    if (typeof updates.sprintBucket === 'string') allowed.sprintBucket = updates.sprintBucket;
+    if (typeof updates.scrumStatus === 'string') allowed.scrumStatus = updates.scrumStatus;
+    if (typeof updates.epicId === 'string' || updates.epicId === null) allowed.epicId = updates.epicId;
+
+    if (Object.prototype.hasOwnProperty.call(allowed, 'title') && !allowed.title) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+
+    const updated = await Todo.findByIdAndUpdate(id, allowed, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Not found' });
+
+    res.json({
+      id: updated._id.toString(),
+      title: updated.title,
+      description: updated.description,
+      dueDate: updated.dueDate,
+      status: updated.status,
+      priority: updated.priority,
+      points: typeof updated.points === 'number' ? updated.points : undefined,
+      repeatWeekly: Boolean(updated.repeatWeekly),
+      repeatMonthly: Boolean(updated.repeatMonthly),
+      sprintBucket: updated.sprintBucket,
+      scrumStatus: updated.scrumStatus,
+      epicId: updated.epicId ? updated.epicId.toString() : undefined
+    });
+  } catch (error) {
+    console.error('Error updating todo:', error);
+    res.status(500).json({ error: 'Failed to update todo' });
+  }
+});
+
+// DELETE todo
+app.delete('/james-todos/api/todos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Todo.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting todo:', error);
+    res.status(500).json({ error: 'Failed to delete todo' });
+  }
+});
+
+// Legacy bulk upsert (non-destructive)
+app.post('/james-todos/api/todos/bulk', async (req, res) => {
+  try {
+    const todos = Array.isArray(req.body) ? req.body : [];
+
+    const ops = todos
+      .filter(t => t && typeof t.id === 'string' && t.id)
+      .map(t => {
+        const p = typeof t.points === 'number' ? t.points : Number(t.points);
+        const normalizedPoints = [1, 2, 3, 5, 8].includes(p) ? p : undefined;
+        return {
+          updateOne: {
+            filter: { _id: t.id },
+            update: {
+              $set: {
+                title: typeof t.title === 'string' ? t.title.trim() : '',
+                description: typeof t.description === 'string' ? t.description : '',
+                dueDate: t.dueDate,
+                status: t.status === 'Wiedervorlage' ? 'Neu' : (t.status || 'Neu'),
+                priority: t.priority || 'Hat Zeit',
+                points: normalizedPoints,
+                repeatWeekly: Boolean(t.repeatWeekly) || t.status === 'Wiedervorlage',
+                repeatMonthly: Boolean(t.repeatMonthly),
+                sprintBucket: t.sprintBucket || 'none',
+                scrumStatus: t.scrumStatus || 'Ready',
+                epicId: t.epicId || null
+              }
+            },
+            upsert: true
+          }
+        };
+      });
+
+    if (ops.length > 0) {
+      await Todo.bulkWrite(ops);
+    }
+
+    res.json({ success: true, count: ops.length });
+  } catch (error) {
+    console.error('Error bulk upserting todos:', error);
+    res.status(500).json({ error: 'Failed to bulk upsert todos' });
   }
 });
 
@@ -326,51 +479,37 @@ const BOARD_STATUS_TO_TODO_STATUS = {
   'Done': 'Erledigt'
 };
 
-async function ensureBoardItemsForTodos() {
-  const todos = await Todo.find().sort({ createdAt: -1 });
-
-  for (const todo of todos) {
-    const existing = await BoardItem.findOne({ todoId: todo._id });
-    if (existing) continue;
-
-    const boardStatus = TODO_STATUS_TO_BOARD_STATUS[todo.status] || 'Backlog';
-    const maxOrderItem = await BoardItem.findOne({ status: boardStatus }).sort({ order: -1 });
-    const nextOrder = maxOrderItem ? maxOrderItem.order + 1 : 0;
-
-    await BoardItem.create({
-      title: todo.title,
-      description: todo.description,
-      epic: '',
-      status: boardStatus,
-      order: nextOrder,
-      todoId: todo._id
-    });
-  }
-}
-
 // GET board items
 app.get('/james-todos/api/board-items', async (req, res) => {
   try {
-    await ensureBoardItemsForTodos();
+    const todos = await Todo.find().sort({ createdAt: -1 });
+    const formatted = todos.map((todo, idx) => {
+      const boardStatus = TODO_STATUS_TO_BOARD_STATUS[todo.status] || 'Backlog';
+      return {
+        id: todo._id.toString(),
+        title: todo.title,
+        description: todo.description,
+        epic: '',
+        status: boardStatus,
+        order: idx,
+        todoId: todo._id.toString(),
+        todo: {
+          id: todo._id.toString(),
+          title: todo.title,
+          description: todo.description,
+          dueDate: todo.dueDate,
+          status: todo.status,
+          priority: todo.priority,
+          points: typeof todo.points === 'number' ? todo.points : undefined,
+          repeatWeekly: Boolean(todo.repeatWeekly),
+          repeatMonthly: Boolean(todo.repeatMonthly),
+          sprintBucket: todo.sprintBucket,
+          scrumStatus: todo.scrumStatus,
+          epicId: todo.epicId ? todo.epicId.toString() : undefined
+        }
+      };
+    });
 
-    const items = await BoardItem.find().populate('todoId').sort({ status: 1, order: 1, createdAt: 1 });
-    const formatted = items.map(item => ({
-      id: item._id.toString(),
-      title: item.title,
-      description: item.description,
-      epic: item.epic,
-      status: item.status,
-      order: item.order,
-      todoId: item.todoId ? item.todoId._id.toString() : undefined,
-      todo: item.todoId ? {
-        id: item.todoId._id.toString(),
-        title: item.todoId.title,
-        description: item.todoId.description,
-        dueDate: item.todoId.dueDate,
-        status: item.todoId.status,
-        priority: item.todoId.priority
-      } : undefined
-    }));
     res.json(formatted);
   } catch (error) {
     console.error('Error reading board items:', error);
@@ -378,122 +517,21 @@ app.get('/james-todos/api/board-items', async (req, res) => {
   }
 });
 
-// POST create board item
-app.post('/james-todos/api/board-items', async (req, res) => {
-  try {
-    const { title, description, epic, status, todoId } = req.body || {};
-
-    if (!title || typeof title !== 'string' || !title.trim()) {
-      return res.status(400).json({ error: 'title is required' });
-    }
-
-    const normalizedStatus = status || 'Backlog';
-    const maxOrderItem = await BoardItem.findOne({ status: normalizedStatus }).sort({ order: -1 });
-    const nextOrder = maxOrderItem ? maxOrderItem.order + 1 : 0;
-
-    const created = await BoardItem.create({
-      title: title.trim(),
-      description: typeof description === 'string' ? description : '',
-      epic: typeof epic === 'string' ? epic : '',
-      status: normalizedStatus,
-      order: nextOrder,
-      todoId: todoId || undefined
-    });
-
-    res.status(201).json({
-      id: created._id.toString(),
-      title: created.title,
-      description: created.description,
-      epic: created.epic,
-      status: created.status,
-      order: created.order,
-      todoId: created.todoId ? created.todoId.toString() : undefined
-    });
-  } catch (error) {
-    console.error('Error creating board item:', error);
-    res.status(500).json({ error: 'Failed to create board item' });
-  }
+// BoardItem mutation endpoints are disabled: Todo is the single source of truth.
+app.post('/james-todos/api/board-items', (req, res) => {
+  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
 });
 
-// PATCH update board item
-app.patch('/james-todos/api/board-items/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body || {};
-
-    const allowed = {};
-    if (typeof updates.title === 'string') allowed.title = updates.title.trim();
-    if (typeof updates.description === 'string') allowed.description = updates.description;
-    if (typeof updates.epic === 'string') allowed.epic = updates.epic;
-    if (typeof updates.status === 'string') allowed.status = updates.status;
-    if (typeof updates.order === 'number' && Number.isFinite(updates.order)) allowed.order = updates.order;
-
-    const updated = await BoardItem.findByIdAndUpdate(id, allowed, { new: true });
-    if (!updated) return res.status(404).json({ error: 'Not found' });
-
-    res.json({
-      id: updated._id.toString(),
-      title: updated.title,
-      description: updated.description,
-      epic: updated.epic,
-      status: updated.status,
-      order: updated.order
-    });
-  } catch (error) {
-    console.error('Error updating board item:', error);
-    res.status(500).json({ error: 'Failed to update board item' });
-  }
+app.patch('/james-todos/api/board-items/:id', (req, res) => {
+  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
 });
 
-// DELETE board item
-app.delete('/james-todos/api/board-items/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await BoardItem.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ error: 'Not found' });
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting board item:', error);
-    res.status(500).json({ error: 'Failed to delete board item' });
-  }
+app.delete('/james-todos/api/board-items/:id', (req, res) => {
+  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
 });
 
-// POST move/reorder (bulk) for a column
-app.post('/james-todos/api/board-items/reorder', async (req, res) => {
-  try {
-    const { status, orderedIds } = req.body || {};
-    if (!status || !Array.isArray(orderedIds)) {
-      return res.status(400).json({ error: 'status and orderedIds are required' });
-    }
-
-    const todoStatus = BOARD_STATUS_TO_TODO_STATUS[status];
-
-    const bulkOps = orderedIds.map((id, index) => ({
-      updateOne: {
-        filter: { _id: id },
-        update: { $set: { status, order: index } }
-      }
-    }));
-
-    if (bulkOps.length > 0) {
-      await BoardItem.bulkWrite(bulkOps);
-    }
-
-    if (todoStatus) {
-      const movedItems = await BoardItem.find({ _id: { $in: orderedIds } }, { todoId: 1 });
-      const todoIds = movedItems
-        .map(i => i.todoId)
-        .filter(Boolean);
-      if (todoIds.length > 0) {
-        await Todo.updateMany({ _id: { $in: todoIds } }, { $set: { status: todoStatus } });
-      }
-    }
-
-    res.json({ success: true, count: orderedIds.length });
-  } catch (error) {
-    console.error('Error reordering board items:', error);
-    res.status(500).json({ error: 'Failed to reorder board items' });
-  }
+app.post('/james-todos/api/board-items/reorder', (req, res) => {
+  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
 });
 
 // Disable trailing slash redirects
