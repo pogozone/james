@@ -11,6 +11,7 @@ import {
 } from '@hello-pangea/dnd';
 import { SprintBucket, Todo } from '../types';
 import { Calendar, Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, Star, CalendarDays } from 'lucide-react';
+import { isBeforeTodayDateOnly, isDueTodayDateOnly, parseDateOnly } from '../utils/dateOnly';
 
 export interface TodoListProps {
   todos: Todo[];
@@ -28,7 +29,7 @@ const BUCKETS: { key: SprintBucket; title: string }[] = [
 ];
 
 export function TodoList({
-  todos,
+  todos = [],
   onView,
   onEdit,
   onDelete,
@@ -43,7 +44,7 @@ export function TodoList({
         return;
       }
 
-      const startDate = new Date(todo.dueDate);
+      const startDate = parseDateOnly(todo.dueDate);
       const endDate = new Date(startDate);
       endDate.setHours(endDate.getHours() + 1); // 1 hour duration
       
@@ -99,8 +100,6 @@ export function TodoList({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
-      console.log('Google Calendar file downloaded for:', todo.title);
     } catch (error) {
       console.error('Failed to download iCalendar:', error);
       alert('Fehler beim Exportieren in den Google Kalender.');
@@ -172,17 +171,11 @@ export function TodoList({
 
   const isDueToday = (todo: Todo) => {
     if (todo.status === 'Erledigt' || todo.status === 'Unerledigt geschlossen') return false;
-    const due = new Date(todo.dueDate);
-    const now = new Date();
-    return (
-      due.getFullYear() === now.getFullYear() &&
-      due.getMonth() === now.getMonth() &&
-      due.getDate() === now.getDate()
-    );
+    return isDueTodayDateOnly(todo.dueDate);
   };
 
   const isOverdue = (todo: Todo) => {
-    return new Date(todo.dueDate) < new Date() && todo.status !== 'Erledigt' && todo.status !== 'Unerledigt geschlossen';
+    return isBeforeTodayDateOnly(todo.dueDate) && todo.status !== 'Erledigt' && todo.status !== 'Unerledigt geschlossen';
   };
 
   const pointsToHours = (points?: Todo['points']): number => {
@@ -216,7 +209,7 @@ export function TodoList({
     if (statusDiff !== 0) return statusDiff;
     
     // Then by due date
-    const dateDiff = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    const dateDiff = parseDateOnly(a.dueDate).getTime() - parseDateOnly(b.dueDate).getTime();
     if (dateDiff !== 0) return dateDiff;
     
     // Finally by priority

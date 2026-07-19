@@ -12,7 +12,7 @@ Eine vollständige Todo-Anwendung erstellt mit React und Bootstrap.
   - Neu
   - In Bearbeitung
   - Erledigt
-  - Wiedervorlage
+  - Unerledigt geschlossen
 
 ### Ansichten
 - **Listenansicht**: Übersicht aller Aufgaben mit Sortierung und Filterfunktionen

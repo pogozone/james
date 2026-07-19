@@ -22,23 +22,3 @@ export interface Epic {
 export type SprintBucket = 'current' | 'next' | 'none';
 
 export type ScrumStatus = 'Ready' | 'In Progress' | 'Review' | 'Done';
-
-export type BoardStatus = 'Backlog' | 'Ready' | 'In Progress' | 'Review' | 'Done';
-
-export interface BoardItem {
-  id: string;
-  title: string;
-  description?: string;
-  epic?: string;
-  status: BoardStatus;
-  order: number;
-  todoId?: string;
-  todo?: Todo;
-}
-
-export interface CreateBoardItemInput {
-  title: string;
-  description?: string;
-  epic?: string;
-  status?: BoardStatus;
-}

@@ -34,10 +34,6 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
       todo.dueDate === dateString && 
       (todo.status === 'Neu' || todo.status === 'In Bearbeitung')
     );
-    // Debug: Log the first few todos for verification
-    if (date.getDate() <= 8 && filteredTodos.length > 0) {
-      console.log(`Date: ${dateString} (${date.toLocaleDateString('de-DE', { weekday: 'long' })}), Todos:`, filteredTodos.map(t => t.title));
-    }
     return filteredTodos;
   };
   

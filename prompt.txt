@@ -102,6 +102,39 @@ Version scrum 0.0.2
 - Auf dem Scrum Board sollen Aufgaben in der Spalte "Done" nicht mehr hervorgehoben dargestellt werden
 - Ist eine Aufgabe einem Sprint zugewiesen, dann soll sie auch beim erneuten Speichern im gleichen Sprint landen und auch bei anders lautendem Fälligkeitsdatum nicht aus dem Sprint verschoben werden
 
+Refactoring 0.0.3
+Bitte refaktoriere die Datenhaltung der Anwendung mit Fokus auf Datenintegrität:
+- Entferne das globale deleteMany() mit anschließendem Neu-Anlegen aller Todos.
+- Implementiere echte CRUD-Endpunkte mit dauerhaft stabilen MongoDB-IDs.
+- Bereinige verwaiste und doppelte BoardItems.
+- Führe Todo und BoardItem zu einem konsistenten Datenmodell mit einer eindeutigen Datenquelle (Single Source of Truth) zusammen.
+- Behandle Speicherfehler sauber: Änderungen erst nach erfolgreichem Speichern übernehmen oder bei Fehlern zurückrollen und den Benutzer sichtbar informieren.
+Wichtig: Bestehende Funktionen dürfen dabei nicht verloren gehen oder ihr Verhalten ändern. Alle Änderungen sollen nachvollziehbar dokumentiert werden.
+Bitte schließe das Refactoring konsequent ab.
+- Das Scrum-Board muss seinen Zustand ausschließlich aus todo.scrumStatus ableiten, nicht aus todo.status.
+- Entferne das alte BoardItem-Modell vollständig (Schema, Collection, Services, Legacy-Code und Migrationshilfen), sobald keine Abhängigkeiten mehr bestehen.
+- Entferne den nicht mehr benötigten Bulk-Endpunkt (POST /todos/bulk).
+- Ergänze eine saubere Request-Validierung (Status, Priorität, Scrum-Status, Sprint-Zuordnung usw.) und liefere bei ungültigen Eingaben HTTP 400 statt HTTP 500.
+- Behandle ungültige MongoDB-IDs (CastError) sauber mit HTTP 400 bzw. HTTP 404.
+- Überarbeite die Rollback-Logik im Frontend, damit sich parallele oder verzögerte Requests nicht gegenseitig überschreiben.
+- Verschiebe die komplette Logik für wiederkehrende Aufgaben ins Backend, sodass Folgeaufgaben atomar erzeugt werden und Frontend und Datenbank niemals auseinanderlaufen.
+Wichtig: Bestehende Funktionen und das Verhalten der Anwendung dürfen sich nicht ändern. Ziel ist ausschließlich eine technisch saubere, konsistente und robuste Implementierung.
+Bitte schließe das Refactoring vollständig und produktionsreif ab.
+- Ersetze die MongoDB-Transaktion in `/complete` durch eine Lösung, die auch mit einer normalen MongoDB-Einzelinstanz funktioniert, **oder** dokumentiere und konfiguriere die Anwendung konsequent für den Betrieb mit einem Replica Set.
+- Gestalte den `/complete`-Endpunkt idempotent: Mehrfache Requests dürfen niemals mehrere Folgeaufgaben erzeugen.
+- Überarbeite die Rollback-Logik im Frontend, sodass bei einem Speicherfehler ausschließlich das betroffene Todo zurückgesetzt wird und niemals andere, zwischenzeitlich erfolgreiche Änderungen verloren gehen.
+- Verschärfe die Request-Validierung: Story Points und Datumsfelder müssen fachlich gültig sein und bei ungültigen Werten mit HTTP 400 beantwortet werden.
+- Entferne sämtlichen verbliebenen Legacy-Code (alte Modelle, leere Services, ungenutzte Dateien wie `server.js`, `boardService.ts`, veraltete Schemas usw.), sofern er nicht mehr benötigt wird.
+Wichtig: Bestehende Funktionen und das Verhalten der Anwendung dürfen sich nicht ändern. Ziel ist ausschließlich eine technisch saubere, robuste und wartbare Implementierung ohne Altlasten oder neue Risiken.
+Bitte führe einen abschließenden Clean-up und Quality Pass durch.
+- Entferne sämtlichen tatsächlich ungenutzten Legacy-Code (z. B. alte Modelle, Services, `server.js` usw.), sofern keine Abhängigkeiten mehr bestehen.
+- Überprüfe die komplette Datumslogik auf Randfälle (Zeitzonen, Monatswechsel, Schaltjahre, Wiederholungen) und verwende für reine Kalendertage eine robuste Implementierung ohne `toISOString().split('T')[0]`.
+- Ergänze fehlende fachliche Validierungen (insbesondere Story Points und Datumswerte), sodass ungültige Eingaben konsequent mit HTTP 400 beantwortet werden.
+- Führe eine Codebereinigung durch (tote Funktionen, doppelte Logik, ungenutzte Imports, überflüssige Dateien, Kommentare und `TODO`s).
+- Prüfe die gesamte Anwendung auf Konsistenz, Wartbarkeit und mögliche versteckte Fehler, ohne die bestehende Funktionalität oder das Benutzerverhalten zu verändern.
+Wichtig: Ziel ist kein neues Refactoring und keine neuen Features, sondern ein abschließender Qualitäts-, Stabilitäts- und Wartbarkeitspass. Es sollen nur Änderungen vorgenommen werden, die die Codequalität verbessern, ohne das Verhalten der Anwendung zu verändern.
+
+
 ToDos:
 Auswertung:
 - Es gibt einen Reiter "Auswertung", der eine Übersicht vergangener Sprints zeigt

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrumStatus, SprintBucket, Todo } from './types';
 import { todoService } from './services/todoService';
 import { TodoList } from './components/TodoList';
@@ -48,10 +48,23 @@ function App() {
     });
   };
 
+  const todoMutationVersionRef = useRef<Record<string, number>>({});
+
+  const beginTodoMutation = (todoId: string) => {
+    const next = (todoMutationVersionRef.current[todoId] || 0) + 1;
+    todoMutationVersionRef.current[todoId] = next;
+    return next;
+  };
+
+  const isLatestTodoMutation = (todoId: string, version: number) => {
+    return (todoMutationVersionRef.current[todoId] || 0) === version;
+  };
+
   const handleSaveTodo = async (todo: Todo) => {
-    const prevTodos = todos;
+    const prevTodo = todo.id ? todos.find(t => t.id === todo.id) : undefined;
     try {
       if (todo.id) {
+        const mutationVersion = beginTodoMutation(todo.id);
         const optimistic = todo;
         setTodos(prev => prev.map(t => (t.id === optimistic.id ? optimistic : t)));
         const saved = await todoService.updateTodo(todo.id, {
@@ -67,6 +80,7 @@ function App() {
           scrumStatus: todo.scrumStatus,
           epicId: todo.epicId || undefined
         });
+        if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
         replaceTodoInState(saved);
       } else {
         const created = await todoService.createTodo({
@@ -89,20 +103,26 @@ function App() {
       setSelectedTodo(null);
     } catch (error) {
       console.error('Failed to save todo:', error);
-      setTodos(prevTodos);
+      if (todo.id && prevTodo) {
+        replaceTodoInState(prevTodo);
+      }
       alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
     }
   };
 
   const handleDeleteTodo = async (id: string) => {
     if (!window.confirm('Möchten Sie diese Aufgabe wirklich löschen?')) return;
-    const prevTodos = todos;
+    const prevTodo = todos.find(t => t.id === id);
+    const mutationVersion = beginTodoMutation(id);
     setTodos(prev => prev.filter(t => t.id !== id));
     try {
       await todoService.deleteTodo(id);
     } catch (error) {
       console.error('Failed to delete todo:', error);
-      setTodos(prevTodos);
+      if (!isLatestTodoMutation(id, mutationVersion)) return;
+      if (prevTodo) {
+        setTodos(prev => [prevTodo, ...prev]);
+      }
       alert('Löschen fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
     }
   };
@@ -133,42 +153,29 @@ function App() {
   };
 
   const handleStatusChange = async (todo: Todo, newStatus: Todo['status']) => {
-    const prevTodos = todos;
+    const prevTodo = todos.find(t => t.id === todo.id);
+    const mutationVersion = beginTodoMutation(todo.id);
     const optimistic = { ...todo, status: newStatus };
     setTodos(prev => prev.map(t => (t.id === todo.id ? optimistic : t)));
 
     try {
-      const saved = await todoService.updateTodo(todo.id, { status: newStatus });
-      replaceTodoInState(saved);
-
-      if (newStatus === 'Erledigt' && (todo.repeatWeekly || todo.repeatMonthly)) {
-        const baseDate = new Date(todo.dueDate);
-        const nextDate = new Date(baseDate);
-        if (todo.repeatMonthly) {
-          nextDate.setMonth(nextDate.getMonth() + 1);
-        } else {
-          nextDate.setDate(nextDate.getDate() + 7);
+      if (newStatus === 'Erledigt') {
+        const result = await todoService.completeTodo(todo.id);
+        if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+        replaceTodoInState(result.updated);
+        if (result.followUp) {
+          setTodos(prev => [result.followUp as Todo, ...prev]);
         }
-
-        const duplicateCreated = await todoService.createTodo({
-          title: todo.title,
-          description: todo.description || '',
-          dueDate: nextDate.toISOString().split('T')[0],
-          status: 'Neu',
-          priority: todo.priority,
-          points: todo.points,
-          repeatWeekly: Boolean(todo.repeatWeekly),
-          repeatMonthly: Boolean(todo.repeatMonthly),
-          sprintBucket: 'next',
-          scrumStatus: 'Ready',
-          epicId: todo.epicId || undefined
-        });
-
-        setTodos(prev => [duplicateCreated, ...prev]);
+        return;
       }
+
+      const saved = await todoService.updateTodo(todo.id, { status: newStatus });
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+      replaceTodoInState(saved);
     } catch (error) {
       console.error('Failed to update status:', error);
-      setTodos(prevTodos);
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+      if (prevTodo) replaceTodoInState(prevTodo);
       alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
     }
   };
@@ -189,17 +196,20 @@ function App() {
       updatedTodos.push(updatedTodo);
     }
 
-    const prevTodos = todos;
+    const prevTodo = todos.find(t => t.id === todo.id);
+    const mutationVersion = beginTodoMutation(todo.id);
     setTodos(updatedTodos);
     todoService.updateTodo(todo.id, {
       sprintBucket: 'none',
       scrumStatus: 'Ready',
       status: 'Neu'
     }).then(saved => {
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
       replaceTodoInState(saved);
     }).catch(error => {
       console.error('Save failed:', error);
-      setTodos(prevTodos);
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+      if (prevTodo) replaceTodoInState(prevTodo);
       alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
     });
   };
@@ -219,16 +229,19 @@ function App() {
       updatedTodos.push(updatedTodo);
     }
 
-    const prevTodos = todos;
+    const prevTodo = todos.find(t => t.id === todo.id);
+    const mutationVersion = beginTodoMutation(todo.id);
     setTodos(updatedTodos);
     todoService.updateTodo(todo.id, {
       sprintBucket,
       scrumStatus: sprintBucket === 'current' ? 'Ready' : todo.scrumStatus
     }).then(saved => {
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
       replaceTodoInState(saved);
     }).catch(error => {
       console.error('Save failed:', error);
-      setTodos(prevTodos);
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+      if (prevTodo) replaceTodoInState(prevTodo);
       alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
     });
   };
@@ -259,45 +272,32 @@ function App() {
       updatedTodos.push(updatedTodo);
     }
 
-    const prevTodos = todos;
+    const prevTodo = todos.find(t => t.id === todo.id);
+    const mutationVersion = beginTodoMutation(todo.id);
     setTodos(updatedTodos);
 
     (async () => {
       try {
+        if (scrumStatus === 'Done') {
+          const result = await todoService.completeTodo(todo.id);
+          if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+          replaceTodoInState(result.updated);
+          if (result.followUp) {
+            setTodos(prev => [result.followUp as Todo, ...prev]);
+          }
+          return;
+        }
+
         const saved = await todoService.updateTodo(todo.id, {
           scrumStatus,
           status: derivedStatus
         });
+        if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
         replaceTodoInState(saved);
-
-        if (derivedStatus === 'Erledigt' && (todo.repeatWeekly || todo.repeatMonthly)) {
-          const baseDate = new Date(todo.dueDate);
-          const nextDate = new Date(baseDate);
-          if (todo.repeatMonthly) {
-            nextDate.setMonth(nextDate.getMonth() + 1);
-          } else {
-            nextDate.setDate(nextDate.getDate() + 7);
-          }
-
-          const duplicateCreated = await todoService.createTodo({
-            title: todo.title,
-            description: todo.description || '',
-            dueDate: nextDate.toISOString().split('T')[0],
-            status: 'Neu',
-            priority: todo.priority,
-            points: todo.points,
-            repeatWeekly: Boolean(todo.repeatWeekly),
-            repeatMonthly: Boolean(todo.repeatMonthly),
-            sprintBucket: 'next',
-            scrumStatus: 'Ready',
-            epicId: todo.epicId || undefined
-          });
-
-          setTodos(prev => [duplicateCreated, ...prev]);
-        }
       } catch (error) {
         console.error('Save failed:', error);
-        setTodos(prevTodos);
+        if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+        if (prevTodo) replaceTodoInState(prevTodo);
         alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
       }
     })();

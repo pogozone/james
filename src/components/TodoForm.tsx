@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Epic, Todo } from '../types';
 import { epicService } from '../services/epicService';
 import { Calendar, Save, X } from 'lucide-react';
+import { addDaysDateOnly, formatDateOnly, parseDateOnly } from '../utils/dateOnly';
 
 interface TodoFormProps {
   todo?: Todo;
@@ -14,9 +15,9 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
     title: '',
     description: '',
     dueDate: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      return d.toISOString().split('T')[0];
+      const now = new Date();
+      const today = formatDateOnly(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
+      return addDaysDateOnly(today, 1);
     })(),
     status: 'Neu',
     priority: 'Hat Zeit',
@@ -46,7 +47,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
   const getAutoSprintBucket = (dueDateStr: string, status: Todo['status']): Todo['sprintBucket'] => {
     if (status === 'Erledigt' || status === 'Unerledigt geschlossen') return 'none';
 
-    const due = new Date(dueDateStr);
+    const due = parseDateOnly(dueDateStr);
     if (Number.isNaN(due.getTime())) return 'none';
 
     const startOfWeek = (d: Date) => {
@@ -74,21 +75,15 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
 
   // Make focus function globally available
   useEffect(() => {
-    console.log('TodoForm mounted, setting up focusDateInput function');
     (window as any).focusDateInput = () => {
-      console.log('focusDateInput called, dateInputRef.current:', dateInputRef.current);
       if (dateInputRef.current) {
-        console.log('Focusing date input');
         dateInputRef.current.focus();
         dateInputRef.current.click();
         dateInputRef.current.showPicker?.();
-      } else {
-        console.log('dateInputRef.current is null');
       }
     };
     
     return () => {
-      console.log('TodoForm unmounting, cleaning up focusDateInput function');
       delete (window as any).focusDateInput;
     };
   }, []);
@@ -102,7 +97,10 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
     }
 
     const status = formData.status as Todo['status'];
-    const due = formData.dueDate || new Date().toISOString().split('T')[0];
+    const due = formData.dueDate || (() => {
+      const now = new Date();
+      return formatDateOnly(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
+    })();
 
     const existingBucket = (todo?.sprintBucket || formData.sprintBucket || 'none') as Todo['sprintBucket'];
     const shouldPreserveBucket = existingBucket === 'current' || existingBucket === 'next';

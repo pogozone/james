@@ -10,6 +10,7 @@ import {
   DropResult
 } from '@hello-pangea/dnd';
 import { ScrumStatus, Todo } from '../types';
+import { isBeforeTodayDateOnly, isDueTodayDateOnly } from '../utils/dateOnly';
 
 const STATUSES: { key: ScrumStatus; title: string }[] = [
   { key: 'Ready', title: 'Ready' },
@@ -19,18 +20,12 @@ const STATUSES: { key: ScrumStatus; title: string }[] = [
 ];
 
 function isDueToday(todo: Todo) {
-  if (todo.status === 'Erledigt' || todo.status === 'Unerledigt geschlossen') return false;
-  const due = new Date(todo.dueDate);
-  const now = new Date();
-  return (
-    due.getFullYear() === now.getFullYear() &&
-    due.getMonth() === now.getMonth() &&
-    due.getDate() === now.getDate()
-  );
+  if ((todo.scrumStatus || 'Ready') === 'Done') return false;
+  return isDueTodayDateOnly(todo.dueDate);
 }
 
 function isOverdue(todo: Todo) {
-  return new Date(todo.dueDate) < new Date() && todo.status !== 'Erledigt' && todo.status !== 'Unerledigt geschlossen';
+  return isBeforeTodayDateOnly(todo.dueDate) && (todo.scrumStatus || 'Ready') !== 'Done';
 }
 
 function groupByScrumStatus(todos: Todo[]): Record<ScrumStatus, Todo[]> {

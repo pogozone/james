@@ -5,7 +5,6 @@
 - Remove destructive persistence (no `deleteMany()` + re-insert for todos).
 - Provide true CRUD endpoints with stable MongoDB `_id` values.
 - Make `Todo` the single source of truth.
-- Prevent drift between `Todo` and legacy `BoardItem` documents.
 - Handle save errors safely in the UI (rollback + user-visible message).
 
 ## Backend changes (`server-mongo.js`)
@@ -24,30 +23,19 @@
 - **DELETE** `/james-todos/api/todos/:id`
   - Deletes a single todo.
 
-- **Legacy (non-destructive) bulk endpoint**
-  - **POST** `/james-todos/api/todos/bulk`
-  - Performs `bulkWrite` upserts by id.
-  - Exists only for compatibility; it does **not** delete data.
+### Completion endpoint (backend-owned recurring logic)
+
+- **POST** `/james-todos/api/todos/:id/complete`
+  - Sets the todo to `scrumStatus = Done` and `status = Erledigt`.
+  - If `repeatWeekly` or `repeatMonthly` is set, it creates the follow-up todo server-side.
+  - Returns `{ updated, followUp }`.
+  - The endpoint is **idempotent**: repeated calls will never create multiple follow-up todos.
+  - No MongoDB transaction is required (works on a single MongoDB instance).
 
 ### Board model (Single Source of Truth)
 
-- `BoardItem` is treated as **legacy**.
-- **GET** `/james-todos/api/board-items` is now **derived from Todos**.
-  - It returns “board items” that mirror todos.
-  - No `BoardItem` collection is needed to render the board.
-
-- All mutating BoardItem endpoints are **disabled** and return HTTP `409`:
-  - `POST /board-items`
-  - `PATCH /board-items/:id`
-  - `DELETE /board-items/:id`
-  - `POST /board-items/reorder`
-
-### BoardItem cleanup
-
-On Mongo connection (`mongoose.connection.once('open')`):
-
-- Orphaned BoardItems are deleted (no existing `todoId`).
-- Duplicate BoardItems per `todoId` are deleted (keeps first by `createdAt`).
+- `BoardItem` has been removed.
+- The Scrum board is derived directly from `Todo.scrumStatus`.
 
 ## Frontend changes
 
@@ -62,6 +50,7 @@ On Mongo connection (`mongoose.connection.once('open')`):
 - On save/delete failure:
   - state is rolled back to the previous snapshot
   - the user receives an alert message
+- Delayed responses are ignored if a newer mutation has been issued for the same todo.
 
 ## Invariants preserved
 
@@ -70,5 +59,5 @@ On Mongo connection (`mongoose.connection.once('open')`):
 
 ## Notes
 
-- If you still have old `BoardItem` documents, they are harmless and will be cleaned up.
+- If you still have old `BoardItem` documents in MongoDB, they are no longer used by the app.
 - Future enhancements should update `Todo` only; the board is computed from it.

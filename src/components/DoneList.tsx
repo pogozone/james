@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Todo } from '../types';
+import { parseDateOnly } from '../utils/dateOnly';
 import { Calendar, RotateCcw } from 'lucide-react';
 
 interface DoneListProps {
@@ -11,8 +12,8 @@ export function DoneList({ todos, onMoveToBacklog }: DoneListProps) {
   const doneTodos = useMemo(() => {
     const filtered = todos.filter(t => t.status === 'Erledigt' || t.status === 'Unerledigt geschlossen');
     filtered.sort((a, b) => {
-      const aDate = new Date(a.dueDate).getTime();
-      const bDate = new Date(b.dueDate).getTime();
+      const aDate = parseDateOnly(a.dueDate).getTime();
+      const bDate = parseDateOnly(b.dueDate).getTime();
       return aDate - bDate;
     });
     return filtered;

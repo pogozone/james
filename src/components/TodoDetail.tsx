@@ -1,5 +1,6 @@
 import React from 'react';
 import { Todo } from '../types';
+import { isBeforeTodayDateOnly } from '../utils/dateOnly';
 import { Calendar, Edit, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface TodoDetailProps {
@@ -48,7 +49,7 @@ export const TodoDetail: React.FC<TodoDetailProps> = ({ todo, onEdit, onBack }) 
     });
   };
 
-  const isOverdue = new Date(todo.dueDate) < new Date() && todo.status !== 'Erledigt';
+  const isOverdue = isBeforeTodayDateOnly(todo.dueDate) && todo.status !== 'Erledigt';
 
   return (
     <div className="card shadow-sm">

@@ -6,6 +6,42 @@ const app = express();
 const PORT = process.env.PORT || 3003;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/james-todos';
 
+const TODO_STATUSES = ['Neu', 'In Bearbeitung', 'Erledigt', 'Unerledigt geschlossen'];
+const TODO_PRIORITIES = ['Super wichtig', 'Bald erledigen', 'Hat Zeit'];
+const SPRINT_BUCKETS = ['current', 'next', 'none'];
+const SCRUM_STATUSES = ['Ready', 'In Progress', 'Review', 'Done'];
+
+function formatDateOnlyUTC(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseDateOnlyUTC(value) {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+function isValidDateString(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y &&
+    dt.getUTCMonth() === m - 1 &&
+    dt.getUTCDate() === d
+  );
+}
+
+function isValidObjectId(id) {
+  return typeof id === 'string' && mongoose.Types.ObjectId.isValid(id);
+}
+
+function sendBadRequest(res, message) {
+  return res.status(400).json({ error: message });
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -86,10 +122,17 @@ const TodoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Epic',
     required: false
+  },
+  followUpOf: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Todo',
+    required: false
   }
 }, {
   timestamps: true
 });
+
+TodoSchema.index({ followUpOf: 1 }, { unique: true, sparse: true });
 
 const Todo = mongoose.model('Todo', TodoSchema);
 
@@ -112,81 +155,10 @@ mongoose.connection.once('open', async () => {
     if (migrated2) {
       console.log('Migrated wiedervorlage flag to repeatWeekly:', migrated2);
     }
-
-    // BoardItems are legacy; Todo is the single source of truth.
-    // Clean up orphaned and duplicate BoardItems to keep DB tidy.
-    try {
-      const todos = await Todo.find({}, { _id: 1 }).lean();
-      const todoIdSet = new Set(todos.map(t => t._id.toString()));
-      const items = await BoardItem.find().sort({ createdAt: 1 }).lean();
-
-      const idsToDelete = [];
-      const seenByTodoId = new Set();
-
-      for (const item of items) {
-        const todoId = item.todoId ? item.todoId.toString() : '';
-        if (!todoId || !todoIdSet.has(todoId)) {
-          idsToDelete.push(item._id);
-          continue;
-        }
-        // keep only one BoardItem per todoId
-        if (seenByTodoId.has(todoId)) {
-          idsToDelete.push(item._id);
-          continue;
-        }
-        seenByTodoId.add(todoId);
-      }
-
-      if (idsToDelete.length > 0) {
-        await BoardItem.deleteMany({ _id: { $in: idsToDelete } });
-        console.log('Cleaned up BoardItems (orphans/duplicates):', idsToDelete.length);
-      }
-    } catch (error) {
-      console.error('Failed to clean up BoardItems:', error);
-    }
   } catch (error) {
     console.error('Failed to migrate Wiedervorlage flags:', error);
   }
 });
-
-// Scrum Board Item Schema
-const BoardItemSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  todoId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Todo',
-    required: false
-  },
-  description: {
-    type: String,
-    trim: true,
-    default: ''
-  },
-  epic: {
-    type: String,
-    trim: true,
-    default: ''
-  },
-  status: {
-    type: String,
-    enum: ['Backlog', 'Ready', 'In Progress', 'Review', 'Done'],
-    default: 'Backlog'
-  },
-  order: {
-    type: Number,
-    default: 0
-  }
-}, {
-  timestamps: true
-});
-
-BoardItemSchema.index({ status: 1, order: 1, createdAt: 1 });
-
-const BoardItem = mongoose.model('BoardItem', BoardItemSchema);
 
 // API Routes
 
@@ -234,6 +206,7 @@ app.post('/james-todos/api/epics', async (req, res) => {
 app.patch('/james-todos/api/epics/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
     const { title, description } = req.body || {};
 
     const allowed = {};
@@ -254,6 +227,7 @@ app.patch('/james-todos/api/epics/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating epic:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to update epic' });
   }
 });
@@ -262,6 +236,7 @@ app.patch('/james-todos/api/epics/:id', async (req, res) => {
 app.delete('/james-todos/api/epics/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
     const deleted = await Epic.findByIdAndDelete(id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
 
@@ -270,6 +245,7 @@ app.delete('/james-todos/api/epics/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting epic:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to delete epic' });
   }
 });
@@ -283,12 +259,10 @@ app.get('/james-todos/api/todos', async (req, res) => {
       title: todo.title,
       description: todo.description,
       dueDate: todo.dueDate,
-      status: todo.status === 'Wiedervorlage' ? 'Neu' : todo.status,
+      status: todo.status,
       priority: todo.priority,
       points: typeof todo.points === 'number' ? todo.points : undefined,
-      repeatWeekly: todo.status === 'Wiedervorlage'
-        ? true
-        : Boolean(todo.repeatWeekly),
+      repeatWeekly: Boolean(todo.repeatWeekly),
       repeatMonthly: Boolean(todo.repeatMonthly),
       sprintBucket: todo.sprintBucket,
       scrumStatus: todo.scrumStatus,
@@ -308,27 +282,42 @@ app.post('/james-todos/api/todos', async (req, res) => {
     if (!todo.title || typeof todo.title !== 'string' || !todo.title.trim()) {
       return res.status(400).json({ error: 'title is required' });
     }
-    if (!todo.dueDate || typeof todo.dueDate !== 'string') {
-      return res.status(400).json({ error: 'dueDate is required' });
+    if (!isValidDateString(todo.dueDate)) return res.status(400).json({ error: 'dueDate is required' });
+
+    const normalizedStatus = todo.status || 'Neu';
+    if (!TODO_STATUSES.includes(normalizedStatus)) return sendBadRequest(res, 'Invalid status');
+    const normalizedPriority = todo.priority || 'Hat Zeit';
+    if (!TODO_PRIORITIES.includes(normalizedPriority)) return sendBadRequest(res, 'Invalid priority');
+    const normalizedSprintBucket = todo.sprintBucket || 'none';
+    if (!SPRINT_BUCKETS.includes(normalizedSprintBucket)) return sendBadRequest(res, 'Invalid sprintBucket');
+    const normalizedScrumStatus = todo.scrumStatus || 'Ready';
+    if (!SCRUM_STATUSES.includes(normalizedScrumStatus)) return sendBadRequest(res, 'Invalid scrumStatus');
+
+    let epicId = null;
+    if (typeof todo.epicId === 'string' && todo.epicId) {
+      if (!isValidObjectId(todo.epicId)) return sendBadRequest(res, 'Invalid epicId');
+      epicId = todo.epicId;
     }
 
-    const normalizedPoints = (() => {
+    let normalizedPoints;
+    if (Object.prototype.hasOwnProperty.call(todo, 'points')) {
       const p = typeof todo.points === 'number' ? todo.points : Number(todo.points);
-      return [1, 2, 3, 5, 8].includes(p) ? p : undefined;
-    })();
+      if (![1, 2, 3, 5, 8].includes(p)) return sendBadRequest(res, 'Invalid points');
+      normalizedPoints = p;
+    }
 
     const created = await Todo.create({
       title: todo.title.trim(),
       description: typeof todo.description === 'string' ? todo.description : '',
       dueDate: todo.dueDate,
-      status: todo.status === 'Wiedervorlage' ? 'Neu' : (todo.status || 'Neu'),
-      priority: todo.priority || 'Hat Zeit',
+      status: normalizedStatus,
+      priority: normalizedPriority,
       points: normalizedPoints,
-      repeatWeekly: Boolean(todo.repeatWeekly) || todo.status === 'Wiedervorlage',
+      repeatWeekly: Boolean(todo.repeatWeekly),
       repeatMonthly: Boolean(todo.repeatMonthly),
-      sprintBucket: todo.sprintBucket || 'none',
-      scrumStatus: todo.scrumStatus || 'Ready',
-      epicId: todo.epicId || null
+      sprintBucket: normalizedSprintBucket,
+      scrumStatus: normalizedScrumStatus,
+      epicId
     });
 
     res.status(201).json({
@@ -347,6 +336,7 @@ app.post('/james-todos/api/todos', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating todo:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to create todo' });
   }
 });
@@ -355,23 +345,51 @@ app.post('/james-todos/api/todos', async (req, res) => {
 app.put('/james-todos/api/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
     const updates = req.body || {};
 
     const allowed = {};
     if (typeof updates.title === 'string') allowed.title = updates.title.trim();
     if (typeof updates.description === 'string') allowed.description = updates.description;
-    if (typeof updates.dueDate === 'string') allowed.dueDate = updates.dueDate;
-    if (typeof updates.status === 'string') allowed.status = updates.status === 'Wiedervorlage' ? 'Neu' : updates.status;
-    if (typeof updates.priority === 'string') allowed.priority = updates.priority;
-    if (typeof updates.points === 'number' || typeof updates.points === 'string') {
-      const p = typeof updates.points === 'number' ? updates.points : Number(updates.points);
-      allowed.points = [1, 2, 3, 5, 8].includes(p) ? p : undefined;
+    if (typeof updates.dueDate === 'string') {
+      if (!isValidDateString(updates.dueDate)) return sendBadRequest(res, 'Invalid dueDate');
+      allowed.dueDate = updates.dueDate;
+    }
+    if (typeof updates.status === 'string') {
+      if (!TODO_STATUSES.includes(updates.status)) return sendBadRequest(res, 'Invalid status');
+      allowed.status = updates.status;
+    }
+    if (typeof updates.priority === 'string') {
+      if (!TODO_PRIORITIES.includes(updates.priority)) return sendBadRequest(res, 'Invalid priority');
+      allowed.priority = updates.priority;
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'points')) {
+      if (updates.points === undefined) {
+        allowed.points = undefined;
+      } else {
+        const p = typeof updates.points === 'number' ? updates.points : Number(updates.points);
+        if (![1, 2, 3, 5, 8].includes(p)) return sendBadRequest(res, 'Invalid points');
+        allowed.points = p;
+      }
     }
     if (typeof updates.repeatWeekly === 'boolean') allowed.repeatWeekly = updates.repeatWeekly;
     if (typeof updates.repeatMonthly === 'boolean') allowed.repeatMonthly = updates.repeatMonthly;
-    if (typeof updates.sprintBucket === 'string') allowed.sprintBucket = updates.sprintBucket;
-    if (typeof updates.scrumStatus === 'string') allowed.scrumStatus = updates.scrumStatus;
-    if (typeof updates.epicId === 'string' || updates.epicId === null) allowed.epicId = updates.epicId;
+    if (typeof updates.sprintBucket === 'string') {
+      if (!SPRINT_BUCKETS.includes(updates.sprintBucket)) return sendBadRequest(res, 'Invalid sprintBucket');
+      allowed.sprintBucket = updates.sprintBucket;
+    }
+    if (typeof updates.scrumStatus === 'string') {
+      if (!SCRUM_STATUSES.includes(updates.scrumStatus)) return sendBadRequest(res, 'Invalid scrumStatus');
+      allowed.scrumStatus = updates.scrumStatus;
+    }
+    if (typeof updates.epicId === 'string' || updates.epicId === null) {
+      if (updates.epicId === null || updates.epicId === '') {
+        allowed.epicId = null;
+      } else {
+        if (!isValidObjectId(updates.epicId)) return sendBadRequest(res, 'Invalid epicId');
+        allowed.epicId = updates.epicId;
+      }
+    }
 
     if (Object.prototype.hasOwnProperty.call(allowed, 'title') && !allowed.title) {
       return res.status(400).json({ error: 'title is required' });
@@ -396,6 +414,7 @@ app.put('/james-todos/api/todos/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating todo:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to update todo' });
   }
 });
@@ -404,134 +423,121 @@ app.put('/james-todos/api/todos/:id', async (req, res) => {
 app.delete('/james-todos/api/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
     const deleted = await Todo.findByIdAndDelete(id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting todo:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to delete todo' });
   }
 });
 
-// Legacy bulk upsert (non-destructive)
-app.post('/james-todos/api/todos/bulk', async (req, res) => {
+// Complete a todo (sets Done + creates follow-up for repeat tasks)
+app.post('/james-todos/api/todos/:id/complete', async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
   try {
-    const todos = Array.isArray(req.body) ? req.body : [];
+    const updated = await Todo.findByIdAndUpdate(
+      id,
+      { $set: { scrumStatus: 'Done', status: 'Erledigt' } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Not found' });
 
-    const ops = todos
-      .filter(t => t && typeof t.id === 'string' && t.id)
-      .map(t => {
-        const p = typeof t.points === 'number' ? t.points : Number(t.points);
-        const normalizedPoints = [1, 2, 3, 5, 8].includes(p) ? p : undefined;
-        return {
-          updateOne: {
-            filter: { _id: t.id },
-            update: {
-              $set: {
-                title: typeof t.title === 'string' ? t.title.trim() : '',
-                description: typeof t.description === 'string' ? t.description : '',
-                dueDate: t.dueDate,
-                status: t.status === 'Wiedervorlage' ? 'Neu' : (t.status || 'Neu'),
-                priority: t.priority || 'Hat Zeit',
-                points: normalizedPoints,
-                repeatWeekly: Boolean(t.repeatWeekly) || t.status === 'Wiedervorlage',
-                repeatMonthly: Boolean(t.repeatMonthly),
-                sprintBucket: t.sprintBucket || 'none',
-                scrumStatus: t.scrumStatus || 'Ready',
-                epicId: t.epicId || null
-              }
-            },
-            upsert: true
+    let followUp = null;
+    if (updated.repeatWeekly || updated.repeatMonthly) {
+      const existing = await Todo.findOne({ followUpOf: updated._id });
+      if (existing) {
+        followUp = existing;
+      } else {
+        const nextDate = parseDateOnlyUTC(updated.dueDate);
+        if (updated.repeatMonthly) {
+          const y = nextDate.getUTCFullYear();
+          const m = nextDate.getUTCMonth();
+          const d = nextDate.getUTCDate();
+          const targetMonthIndex = m + 1;
+          const targetYear = y + Math.floor(targetMonthIndex / 12);
+          const targetMonth = targetMonthIndex % 12;
+          const daysInTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+          const clampedDay = Math.min(d, daysInTargetMonth);
+          nextDate.setUTCFullYear(targetYear);
+          nextDate.setUTCMonth(targetMonth);
+          nextDate.setUTCDate(clampedDay);
+        } else {
+          nextDate.setUTCDate(nextDate.getUTCDate() + 7);
+        }
+
+        try {
+          followUp = await Todo.create({
+            title: updated.title,
+            description: updated.description || '',
+            dueDate: formatDateOnlyUTC(nextDate),
+            status: 'Neu',
+            priority: updated.priority,
+            points: typeof updated.points === 'number' ? updated.points : undefined,
+            repeatWeekly: Boolean(updated.repeatWeekly),
+            repeatMonthly: Boolean(updated.repeatMonthly),
+            sprintBucket: 'next',
+            scrumStatus: 'Ready',
+            epicId: updated.epicId || null,
+            followUpOf: updated._id
+          });
+        } catch (error) {
+          // Idempotency under concurrency: unique index on followUpOf prevents duplicates.
+          if (error && error.code === 11000) {
+            followUp = await Todo.findOne({ followUpOf: updated._id });
+          } else {
+            throw error;
           }
-        };
-      });
-
-    if (ops.length > 0) {
-      await Todo.bulkWrite(ops);
+        }
+      }
     }
 
-    res.json({ success: true, count: ops.length });
+    res.json({
+      updated: {
+        id: updated._id.toString(),
+        title: updated.title,
+        description: updated.description,
+        dueDate: updated.dueDate,
+        status: updated.status,
+        priority: updated.priority,
+        points: typeof updated.points === 'number' ? updated.points : undefined,
+        repeatWeekly: Boolean(updated.repeatWeekly),
+        repeatMonthly: Boolean(updated.repeatMonthly),
+        sprintBucket: updated.sprintBucket,
+        scrumStatus: updated.scrumStatus,
+        epicId: updated.epicId ? updated.epicId.toString() : undefined
+      },
+      followUp: followUp
+        ? {
+          id: followUp._id.toString(),
+          title: followUp.title,
+          description: followUp.description,
+          dueDate: followUp.dueDate,
+          status: followUp.status,
+          priority: followUp.priority,
+          points: typeof followUp.points === 'number' ? followUp.points : undefined,
+          repeatWeekly: Boolean(followUp.repeatWeekly),
+          repeatMonthly: Boolean(followUp.repeatMonthly),
+          sprintBucket: followUp.sprintBucket,
+          scrumStatus: followUp.scrumStatus,
+          epicId: followUp.epicId ? followUp.epicId.toString() : undefined
+        }
+        : null
+    });
   } catch (error) {
-    console.error('Error bulk upserting todos:', error);
-    res.status(500).json({ error: 'Failed to bulk upsert todos' });
+    console.error('Error completing todo:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
+    res.status(500).json({ error: 'Failed to complete todo' });
+  } finally {
   }
 });
 
 // Health check
 app.get('/james-todos/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// Scrum Board API
-
-const TODO_STATUS_TO_BOARD_STATUS = {
-  'Neu': 'Backlog',
-  'In Bearbeitung': 'In Progress',
-  'Erledigt': 'Done',
-  'Unerledigt geschlossen': 'Done'
-};
-
-const BOARD_STATUS_TO_TODO_STATUS = {
-  'Backlog': 'Neu',
-  'Ready': 'Neu',
-  'In Progress': 'In Bearbeitung',
-  'Review': 'In Bearbeitung',
-  'Done': 'Erledigt'
-};
-
-// GET board items
-app.get('/james-todos/api/board-items', async (req, res) => {
-  try {
-    const todos = await Todo.find().sort({ createdAt: -1 });
-    const formatted = todos.map((todo, idx) => {
-      const boardStatus = TODO_STATUS_TO_BOARD_STATUS[todo.status] || 'Backlog';
-      return {
-        id: todo._id.toString(),
-        title: todo.title,
-        description: todo.description,
-        epic: '',
-        status: boardStatus,
-        order: idx,
-        todoId: todo._id.toString(),
-        todo: {
-          id: todo._id.toString(),
-          title: todo.title,
-          description: todo.description,
-          dueDate: todo.dueDate,
-          status: todo.status,
-          priority: todo.priority,
-          points: typeof todo.points === 'number' ? todo.points : undefined,
-          repeatWeekly: Boolean(todo.repeatWeekly),
-          repeatMonthly: Boolean(todo.repeatMonthly),
-          sprintBucket: todo.sprintBucket,
-          scrumStatus: todo.scrumStatus,
-          epicId: todo.epicId ? todo.epicId.toString() : undefined
-        }
-      };
-    });
-
-    res.json(formatted);
-  } catch (error) {
-    console.error('Error reading board items:', error);
-    res.status(500).json({ error: 'Failed to read board items' });
-  }
-});
-
-// BoardItem mutation endpoints are disabled: Todo is the single source of truth.
-app.post('/james-todos/api/board-items', (req, res) => {
-  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
-});
-
-app.patch('/james-todos/api/board-items/:id', (req, res) => {
-  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
-});
-
-app.delete('/james-todos/api/board-items/:id', (req, res) => {
-  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
-});
-
-app.post('/james-todos/api/board-items/reorder', (req, res) => {
-  res.status(409).json({ error: 'Board items are read-only. Use /todos endpoints.' });
 });
 
 // Disable trailing slash redirects

@@ -1,4 +1,5 @@
 import { Todo } from '../types';
+import { formatDateOnly } from '../utils/dateOnly';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api/' : 'http://localhost:3003/james-todos/api/';
 
@@ -26,6 +27,18 @@ export const todoService = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(input)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  },
+
+  async completeTodo(id: string): Promise<{ updated: Todo; followUp: Todo | null }> {
+    const response = await fetch(`${API_BASE_URL}todos/${id}/complete`, {
+      method: 'POST'
     });
 
     if (!response.ok) {
@@ -64,8 +77,9 @@ export const todoService = {
   downloadTodoJson(todos: Todo[]): void {
     const dataStr = JSON.stringify(todos, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `todos-${new Date().toISOString().split('T')[0]}.json`;
+
+    const now = new Date();
+    const exportFileDefaultName = `todos-${formatDateOnly(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())))}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
