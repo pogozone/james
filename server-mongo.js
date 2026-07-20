@@ -6,6 +6,15 @@ const app = express();
 const PORT = process.env.PORT || 3003;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/james-todos';
 
+// Export app for integration tests; start server only when run directly
+if (require.main === module) {
+  mongoose.connect(MONGODB_URI)
+    .then(() => {
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch(err => console.error('MongoDB connection error:', err));
+}
+
 const TODO_STATUSES = ['Neu', 'In Bearbeitung', 'Erledigt', 'Unerledigt geschlossen'];
 const TODO_PRIORITIES = ['Super wichtig', 'Bald erledigen', 'Hat Zeit'];
 const SPRINT_BUCKETS = ['current', 'next', 'none'];
@@ -549,7 +558,4 @@ app.use((req, res, next) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`MongoDB URI: ${MONGODB_URI}`);
-});
+module.exports = app;

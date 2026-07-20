@@ -47,7 +47,7 @@ Version scrum 0.0.1
 - Im Backlog werden erledigte Aufgaben nicht angezeigt
 - Aufgaben können im Backlog per drag&drop zwischen den drei Abteilungen verschoben werden
 - Wird eine Aufgabe im Backlog in den aktuellen Sprint gezogen erscheint die Aufgabe direkt auf den Scrum Board unter Ready
-- Ein Sprint dauert immer eine Woche von Sonntag bis Freitag.
+- Ein Sprint dauert immer eine Woche von Sonntag bis Samstag.
 - Aufgaben, die im Sprint nicht erledigt wurden, wandern automatisch in den nächsten Sprint
 - Aus der Liste wird das Backlog
 - Das Backlog erscheint nicht auf dem Scrum Board
@@ -134,6 +134,25 @@ Bitte führe einen abschließenden Clean-up und Quality Pass durch.
 - Prüfe die gesamte Anwendung auf Konsistenz, Wartbarkeit und mögliche versteckte Fehler, ohne die bestehende Funktionalität oder das Benutzerverhalten zu verändern.
 Wichtig: Ziel ist kein neues Refactoring und keine neuen Features, sondern ein abschließender Qualitäts-, Stabilitäts- und Wartbarkeitspass. Es sollen nur Änderungen vorgenommen werden, die die Codequalität verbessern, ohne das Verhalten der Anwendung zu verändern.
 
+Refactoring 0.0.4
+Bitte ergänze die Anwendung um Integrationstests und ein verlässliches MongoDB-Backup-Konzept.
+Integrationstests:
+- Teste die zentralen API-Abläufe vollständig gegen eine separate Testdatenbank.
+- Abdecken: Todo anlegen, laden, ändern, löschen, abschließen, Sprint- und Scrum-Status ändern sowie wiederkehrende Folgeaufgaben erzeugen.
+- Prüfe insbesondere, dass IDs stabil bleiben, keine doppelten Folgeaufgaben entstehen und ungültige Eingaben mit den korrekten HTTP-Statuscodes beantwortet werden.
+- Die Tests müssen reproduzierbar laufen, Testdaten vor jedem Lauf isolieren und danach sauber entfernen.
+- Verwende die bereits eingesetzten Technologien und halte die Testkonfiguration möglichst einfach.
+MongoDB-Backups:
+- Ergänze ein einfaches, dokumentiertes Backup- und Restore-Konzept für die lokale MongoDB-Datenbank.
+- Erstelle Shell-Skripte für Backup und Wiederherstellung mit mongodump und mongorestore.
+- Backups sollen Zeitstempel tragen, komprimiert gespeichert werden und in einem konfigurierbaren Verzeichnis landen.
+- Alte Backups sollen optional nach einer einstellbaren Anzahl von Tagen gelöscht werden.
+- Zugangsdaten und Verbindungsdaten dürfen nicht fest im Code stehen, sondern müssen über Umgebungsvariablen konfigurierbar sein.
+- Ergänze in der README eine kurze Anleitung für Backup, Restore und einen optionalen Cronjob.
+Wichtig:
+- Keine bestehende Funktionalität verändern.
+- Keine produktiven Daten in Tests verwenden.
+- Am Ende kurz dokumentieren, welche Dateien neu angelegt oder geändert wurden und wie Tests, Backup und Restore ausgeführt werden.
 
 ToDos:
 Auswertung:
