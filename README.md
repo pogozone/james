@@ -14,10 +14,26 @@ Eine vollständige Todo-Anwendung erstellt mit React und Bootstrap.
   - Erledigt
   - Unerledigt geschlossen
 
+### Sprint-Verwaltung
+Sprints sind eigenständige Objekte mit eindeutiger ID, Sprintnummer, Start-/Enddatum und Status (`current`, `next`, `future`, `closed`). Ein Sprint dauert immer eine Kalenderwoche von Sonntag bis Samstag (Europe/Berlin).
+
+**Sprint-Lebenszyklus**
+1. Beim Start der Anwendung wird automatisch ein aktueller Sprint angelegt, falls keiner existiert.
+2. Neue Aufgaben werden automatisch dem aktuellen Sprint zugeordnet.
+3. Ab Samstag (Endtag) erscheint im Scrum Board der Button **Sprint beenden**.
+4. Beim Beenden:
+   - Der aktuelle Sprint wird auf `closed` gesetzt.
+   - Nicht erledigte Aufgaben werden in den Folgesprint verschoben (`scrumStatus` und `status` werden auf `Ready`/`Neu` zurückgesetzt).
+   - Erledigte Aufgaben bleiben dauerhaft im abgeschlossenen Sprint.
+   - Ein Folgesprint mit Status `next` wird bevorzugt übernommen. Existiert keiner, wird ein neuer `next`-Sprint erzeugt. Vorhandene `future`-Sprints bleiben unverändert.
+5. Mehrfaches Beenden ist idempotent.
+
 ### Ansichten
 - **Listenansicht**: Übersicht aller Aufgaben mit Sortierung und Filterfunktionen
 - **Detailansicht**: Vollständige Anzeige einer Aufgabe mit allen Informationen
 - **Eingabe/Bearbeitungsmaske**: Formular zum Erstellen und Bearbeiten von Aufgaben
+- **Scrum Board**: Kanban-Ansicht des aktuellen Sprints mit Drag & Drop
+- **Done-Liste**: Erledigte Aufgaben aus allen Sprints
 
 ### Spezielle Features
 - Überfällige Aufgaben werden rot markiert
@@ -31,7 +47,8 @@ Eine vollständige Todo-Anwendung erstellt mit React und Bootstrap.
 - **React 18** mit TypeScript
 - **Bootstrap 5** für das UI-Design
 - **Lucide React** für Icons
-- **localStorage** für die Datenspeicherung
+- **MongoDB** mit Mongoose für die Datenspeicherung
+- **Express** für die REST-API
 
 ## Projektstruktur
 
@@ -40,16 +57,28 @@ src/
 ├── components/
 │   ├── TodoForm.tsx      # Eingabe/Bearbeitungsmaske
 │   ├── TodoDetail.tsx    # Detailansicht
-│   └── TodoList.tsx      # Listenansicht
+│   ├── TodoList.tsx      # Listenansicht
+│   ├── ScrumBoard.tsx    # Kanban-Board des aktuellen Sprints
+│   ├── DoneList.tsx      # Erledigte Aufgaben
+│   └── EpicList.tsx      # Epic-Übersicht
 ├── services/
-│   └── todoService.ts    # API-Service für Datenverwaltung
+│   ├── todoService.ts    # API-Service für Aufgaben
+│   └── sprintService.ts  # API-Service für Sprints
+├── utils/
+│   └── dateOnly.ts       # Zeitzonen-sichere Datumshelfer
 ├── types.ts              # TypeScript-Typdefinitionen
 ├── App.tsx               # Hauptanwendung
 └── App.css               # Custom Styles
 
-public/
-└── todo.json             # JSON-Datei für Aufgaben (Fallback)
+server-mongo.js           # Express-Backend (API + Datenmodell)
 ```
+
+## Sprint-API
+
+- `GET /james-todos/api/sprints` – Liste aller Sprints
+- `GET /james-todos/api/sprints/current` – Aktueller Sprint
+- `POST /james-todos/api/sprints` – Neuen zukünftigen Sprint anlegen
+- `POST /james-todos/api/sprints/:id/close` – Sprint beenden (atomar, idempotent)
 
 ## Installation und Start
 

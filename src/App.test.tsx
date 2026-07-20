@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 jest.mock('./services/todoService', () => ({
   todoService: {
@@ -12,9 +12,20 @@ jest.mock('./services/todoService', () => ({
   }
 }));
 
+jest.mock('./services/sprintService', () => ({
+  sprintService: {
+    getSprints: jest.fn().mockResolvedValue([]),
+    getCurrentSprint: jest.fn().mockResolvedValue(null),
+    createSprint: jest.fn(),
+    closeSprint: jest.fn()
+  }
+}));
+
 import App from './App';
 
 test('renders app title', async () => {
   render(<App />);
-  expect(await screen.findByText('James')).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByText('James')).toBeInTheDocument();
+  });
 });

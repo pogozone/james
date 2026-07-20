@@ -55,11 +55,6 @@ function sendBadRequest(res, message) {
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
 // Epic Schema
 const EpicSchema = new mongoose.Schema({
   title: {
@@ -77,6 +72,39 @@ const EpicSchema = new mongoose.Schema({
 });
 
 const Epic = mongoose.model('Epic', EpicSchema);
+
+// Sprint Schema
+const SprintSchema = new mongoose.Schema({
+  number: {
+    type: Number,
+    required: true,
+    unique: true
+  },
+  startDate: {
+    type: String,
+    required: true
+  },
+  endDate: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['current', 'next', 'future', 'closed'],
+    required: true
+  },
+  closedAt: {
+    type: Date,
+    required: false
+  }
+}, {
+  timestamps: true
+});
+
+SprintSchema.index({ status: 1 });
+SprintSchema.index({ number: 1 });
+
+const Sprint = mongoose.model('Sprint', SprintSchema);
 
 // Todo Schema
 const TodoSchema = new mongoose.Schema({
@@ -132,6 +160,16 @@ const TodoSchema = new mongoose.Schema({
     ref: 'Epic',
     required: false
   },
+  sprintId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Sprint',
+    required: false
+  },
+  sprintBucket: {
+    type: String,
+    enum: ['current', 'next', 'none'],
+    required: false
+  },
   followUpOf: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Todo',
@@ -144,6 +182,49 @@ const TodoSchema = new mongoose.Schema({
 TodoSchema.index({ followUpOf: 1 }, { unique: true, sparse: true });
 
 const Todo = mongoose.model('Todo', TodoSchema);
+
+// Helpers for sprint date calculations (Sunday to Saturday, Europe/Berlin)
+function getBerlinWeekBoundaries(date) {
+  const d = new Date(date);
+  // Build a Berlin-local YYYY-MM-DD string for the given date
+  const berlin = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(d);
+  const [y, m, day] = berlin.split('-').map(Number);
+  const localSunday = new Date(Date.UTC(y, m - 1, day));
+  // Day of week: 0=Sun, 1=Mon, ... 6=Sat in Berlin-local terms (UTC calculation is fine because localSunday is midnight Berlin)
+  const dayOfWeek = localSunday.getUTCDay();
+  const start = new Date(localSunday);
+  start.setUTCDate(localSunday.getUTCDate() - dayOfWeek);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  return { start: formatDateOnlyUTC(start), end: formatDateOnlyUTC(end) };
+}
+
+async function ensureCurrentSprint() {
+  const now = new Date();
+  const { start, end } = getBerlinWeekBoundaries(now);
+  const current = await Sprint.findOne({ status: 'current' });
+  if (current) return current;
+
+  const highest = await Sprint.findOne().sort({ number: -1 });
+  const nextNumber = (highest?.number || 0) + 1;
+  return Sprint.create({ number: nextNumber, startDate: start, endDate: end, status: 'current' });
+}
+
+async function findOrCreateNextSprint(referenceDate) {
+  const nextSprint = await Sprint.findOne({ status: 'next' });
+  if (nextSprint) return nextSprint;
+
+  const nextSunday = new Date(referenceDate);
+  nextSunday.setUTCDate(nextSunday.getUTCDate() + (nextSunday.getUTCDay() === 0 ? 7 : 7 - nextSunday.getUTCDay()));
+  const start = formatDateOnlyUTC(nextSunday);
+  const endDate = new Date(nextSunday);
+  endDate.setUTCDate(nextSunday.getUTCDate() + 6);
+  const end = formatDateOnlyUTC(endDate);
+
+  const highest = await Sprint.findOne().sort({ number: -1 });
+  const nextNumber = (highest?.number || 0) + 1;
+  return Sprint.create({ number: nextNumber, startDate: start, endDate: end, status: 'next' });
+}
 
 mongoose.connection.once('open', async () => {
   try {
@@ -164,8 +245,27 @@ mongoose.connection.once('open', async () => {
     if (migrated2) {
       console.log('Migrated wiedervorlage flag to repeatWeekly:', migrated2);
     }
+
+    // Migrate old sprintBucket to real sprints on first boot after deployment
+    const currentSprint = await ensureCurrentSprint();
+    const currentBucket = await Todo.countDocuments({ sprintBucket: 'current' });
+    if (currentBucket > 0) {
+      await Todo.updateMany({ sprintBucket: 'current' }, { $set: { sprintId: currentSprint._id }, $unset: { sprintBucket: 1 } });
+      console.log('Migrated sprintBucket=current to sprintId:', currentBucket);
+    }
+    const nextBucketCount = await Todo.countDocuments({ sprintBucket: 'next' });
+    if (nextBucketCount > 0) {
+      const nextSprint = await findOrCreateNextSprint(new Date(currentSprint.endDate + 'T00:00:00Z'));
+      await Todo.updateMany({ sprintBucket: 'next' }, { $set: { sprintId: nextSprint._id }, $unset: { sprintBucket: 1 } });
+      console.log('Migrated sprintBucket=next to sprintId:', nextBucketCount);
+    }
+    const noneBucket = await Todo.countDocuments({ sprintBucket: 'none' });
+    if (noneBucket > 0) {
+      await Todo.updateMany({ sprintBucket: 'none' }, { $unset: { sprintBucket: 1 } });
+      console.log('Removed legacy sprintBucket=none:', noneBucket);
+    }
   } catch (error) {
-    console.error('Failed to migrate Wiedervorlage flags:', error);
+    console.error('Failed to run data migrations:', error);
   }
 });
 
@@ -273,6 +373,7 @@ app.get('/james-todos/api/todos', async (req, res) => {
       points: typeof todo.points === 'number' ? todo.points : undefined,
       repeatWeekly: Boolean(todo.repeatWeekly),
       repeatMonthly: Boolean(todo.repeatMonthly),
+      sprintId: todo.sprintId ? todo.sprintId.toString() : undefined,
       sprintBucket: todo.sprintBucket,
       scrumStatus: todo.scrumStatus,
       epicId: todo.epicId ? todo.epicId.toString() : undefined
@@ -298,7 +399,15 @@ app.post('/james-todos/api/todos', async (req, res) => {
     const normalizedPriority = todo.priority || 'Hat Zeit';
     if (!TODO_PRIORITIES.includes(normalizedPriority)) return sendBadRequest(res, 'Invalid priority');
     const normalizedSprintBucket = todo.sprintBucket || 'none';
-    if (!SPRINT_BUCKETS.includes(normalizedSprintBucket)) return sendBadRequest(res, 'Invalid sprintBucket');
+    if (todo.sprintBucket && !SPRINT_BUCKETS.includes(normalizedSprintBucket)) return sendBadRequest(res, 'Invalid sprintBucket');
+
+    let sprintId = null;
+    if (typeof todo.sprintId === 'string' && todo.sprintId) {
+      if (!isValidObjectId(todo.sprintId)) return sendBadRequest(res, 'Invalid sprintId');
+      const sprintExists = await Sprint.findById(todo.sprintId);
+      if (!sprintExists) return sendBadRequest(res, 'Sprint not found');
+      sprintId = todo.sprintId;
+    }
     const normalizedScrumStatus = todo.scrumStatus || 'Ready';
     if (!SCRUM_STATUSES.includes(normalizedScrumStatus)) return sendBadRequest(res, 'Invalid scrumStatus');
 
@@ -324,6 +433,7 @@ app.post('/james-todos/api/todos', async (req, res) => {
       points: normalizedPoints,
       repeatWeekly: Boolean(todo.repeatWeekly),
       repeatMonthly: Boolean(todo.repeatMonthly),
+      sprintId,
       sprintBucket: normalizedSprintBucket,
       scrumStatus: normalizedScrumStatus,
       epicId
@@ -339,6 +449,7 @@ app.post('/james-todos/api/todos', async (req, res) => {
       points: typeof created.points === 'number' ? created.points : undefined,
       repeatWeekly: Boolean(created.repeatWeekly),
       repeatMonthly: Boolean(created.repeatMonthly),
+      sprintId: created.sprintId ? created.sprintId.toString() : undefined,
       sprintBucket: created.sprintBucket,
       scrumStatus: created.scrumStatus,
       epicId: created.epicId ? created.epicId.toString() : undefined
@@ -383,6 +494,16 @@ app.put('/james-todos/api/todos/:id', async (req, res) => {
     }
     if (typeof updates.repeatWeekly === 'boolean') allowed.repeatWeekly = updates.repeatWeekly;
     if (typeof updates.repeatMonthly === 'boolean') allowed.repeatMonthly = updates.repeatMonthly;
+    if (typeof updates.sprintId === 'string' || updates.sprintId === null) {
+      if (updates.sprintId === null || updates.sprintId === '') {
+        allowed.sprintId = null;
+      } else {
+        if (!isValidObjectId(updates.sprintId)) return sendBadRequest(res, 'Invalid sprintId');
+        const sprintExists = await Sprint.findById(updates.sprintId);
+        if (!sprintExists) return sendBadRequest(res, 'Sprint not found');
+        allowed.sprintId = updates.sprintId;
+      }
+    }
     if (typeof updates.sprintBucket === 'string') {
       if (!SPRINT_BUCKETS.includes(updates.sprintBucket)) return sendBadRequest(res, 'Invalid sprintBucket');
       allowed.sprintBucket = updates.sprintBucket;
@@ -417,6 +538,7 @@ app.put('/james-todos/api/todos/:id', async (req, res) => {
       points: typeof updated.points === 'number' ? updated.points : undefined,
       repeatWeekly: Boolean(updated.repeatWeekly),
       repeatMonthly: Boolean(updated.repeatMonthly),
+      sprintId: updated.sprintId ? updated.sprintId.toString() : undefined,
       sprintBucket: updated.sprintBucket,
       scrumStatus: updated.scrumStatus,
       epicId: updated.epicId ? updated.epicId.toString() : undefined
@@ -471,6 +593,7 @@ app.post('/james-todos/api/todos/:id/complete', async (req, res) => {
           const targetMonth = targetMonthIndex % 12;
           const daysInTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
           const clampedDay = Math.min(d, daysInTargetMonth);
+          nextDate.setUTCDate(1);
           nextDate.setUTCFullYear(targetYear);
           nextDate.setUTCMonth(targetMonth);
           nextDate.setUTCDate(clampedDay);
@@ -515,6 +638,7 @@ app.post('/james-todos/api/todos/:id/complete', async (req, res) => {
         points: typeof updated.points === 'number' ? updated.points : undefined,
         repeatWeekly: Boolean(updated.repeatWeekly),
         repeatMonthly: Boolean(updated.repeatMonthly),
+        sprintId: updated.sprintId ? updated.sprintId.toString() : undefined,
         sprintBucket: updated.sprintBucket,
         scrumStatus: updated.scrumStatus,
         epicId: updated.epicId ? updated.epicId.toString() : undefined
@@ -530,6 +654,7 @@ app.post('/james-todos/api/todos/:id/complete', async (req, res) => {
           points: typeof followUp.points === 'number' ? followUp.points : undefined,
           repeatWeekly: Boolean(followUp.repeatWeekly),
           repeatMonthly: Boolean(followUp.repeatMonthly),
+          sprintId: followUp.sprintId ? followUp.sprintId.toString() : undefined,
           sprintBucket: followUp.sprintBucket,
           scrumStatus: followUp.scrumStatus,
           epicId: followUp.epicId ? followUp.epicId.toString() : undefined
@@ -541,6 +666,161 @@ app.post('/james-todos/api/todos/:id/complete', async (req, res) => {
     if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to complete todo' });
   } finally {
+  }
+});
+
+// Sprint routes
+function formatSprint(sprint) {
+  return {
+    id: sprint._id.toString(),
+    number: sprint.number,
+    startDate: sprint.startDate,
+    endDate: sprint.endDate,
+    status: sprint.status,
+    closedAt: sprint.closedAt ? sprint.closedAt.toISOString() : null,
+    createdAt: sprint.createdAt ? sprint.createdAt.toISOString() : null
+  };
+}
+
+app.get('/james-todos/api/sprints', async (req, res) => {
+  try {
+    const sprints = await Sprint.find().sort({ number: -1 });
+    res.json(sprints.map(formatSprint));
+  } catch (error) {
+    console.error('Error reading sprints:', error);
+    res.status(500).json({ error: 'Failed to read sprints' });
+  }
+});
+
+app.get('/james-todos/api/sprints/current', async (req, res) => {
+  try {
+    const current = await Sprint.findOne({ status: 'current' });
+    if (!current) return res.status(404).json({ error: 'No current sprint' });
+    res.json(formatSprint(current));
+  } catch (error) {
+    console.error('Error reading current sprint:', error);
+    res.status(500).json({ error: 'Failed to read current sprint' });
+  }
+});
+
+app.post('/james-todos/api/sprints', async (req, res) => {
+  try {
+    const now = new Date();
+    const nextSunday = new Date(now);
+    nextSunday.setUTCDate(nextSunday.getUTCDate() + (nextSunday.getUTCDay() === 0 ? 7 : 7 - nextSunday.getUTCDay()));
+    const start = formatDateOnlyUTC(nextSunday);
+    const endDate = new Date(nextSunday);
+    endDate.setUTCDate(nextSunday.getUTCDate() + 6);
+    const end = formatDateOnlyUTC(endDate);
+
+    const highest = await Sprint.findOne().sort({ number: -1 });
+    const number = (highest?.number || 0) + 1;
+
+    const sprint = await Sprint.create({ number, startDate: start, endDate: end, status: 'future' });
+    res.status(201).json(formatSprint(sprint));
+  } catch (error) {
+    console.error('Error creating sprint:', error);
+    res.status(500).json({ error: 'Failed to create sprint' });
+  }
+});
+
+app.post('/james-todos/api/sprints/:id/close', async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid sprint id');
+
+  // Optimistic concurrency guard: only one process can close a given sprint.
+  // We use a unique race by attempting to transition the sprint to closed.
+  try {
+    const alreadyClosed = await Sprint.findOne({ _id: id, status: 'closed' });
+    if (alreadyClosed) {
+      const nextCurrent = await Sprint.findOne({ status: 'current' }) || await Sprint.findOne({ status: 'next' }) || await Sprint.findOne({ status: 'future' });
+      return res.json({
+        closedSprint: formatSprint(alreadyClosed),
+        newCurrentSprint: nextCurrent ? formatSprint(nextCurrent) : null,
+        movedTodoCount: 0
+      });
+    }
+
+    const currentSprint = await Sprint.findOneAndUpdate(
+      { _id: id, status: 'current' },
+      { $set: { status: 'closed', closedAt: new Date() } },
+      { new: true }
+    );
+
+    if (!currentSprint) {
+      return res.status(400).json({ error: 'Sprint is not current or does not exist' });
+    }
+
+    // Determine the follow-up sprint (the existing next or future sprint, or create one)
+    let nextSprint = await Sprint.findOne({ status: 'next' }) || await Sprint.findOne({ status: 'future' });
+    if (!nextSprint) {
+      const reference = new Date(currentSprint.endDate + 'T00:00:00Z');
+      const nextSunday = new Date(reference);
+      nextSunday.setUTCDate(reference.getUTCDate() + (reference.getUTCDay() === 0 ? 7 : 7 - reference.getUTCDay()));
+      const start = formatDateOnlyUTC(nextSunday);
+      const nextEndDate = new Date(nextSunday);
+      nextEndDate.setUTCDate(nextSunday.getUTCDate() + 6);
+      const end = formatDateOnlyUTC(nextEndDate);
+
+      const highest = await Sprint.findOne().sort({ number: -1 });
+      const number = (highest?.number || 0) + 1;
+      nextSprint = await Sprint.create({ number, startDate: start, endDate: end, status: 'next' });
+    }
+
+    // Determine the sprint that will become the new next sprint
+    let newNextSprint = await Sprint.findOne({ status: 'future', _id: { $ne: nextSprint._id } });
+    if (!newNextSprint) {
+      const reference = new Date(nextSprint.endDate + 'T00:00:00Z');
+      const nextSunday = new Date(reference);
+      nextSunday.setUTCDate(reference.getUTCDate() + (reference.getUTCDay() === 0 ? 7 : 7 - reference.getUTCDay()));
+      const start = formatDateOnlyUTC(nextSunday);
+      const nextEndDate = new Date(nextSunday);
+      nextEndDate.setUTCDate(nextSunday.getUTCDate() + 6);
+      const end = formatDateOnlyUTC(nextEndDate);
+
+      const highest = await Sprint.findOne().sort({ number: -1 });
+      const number = (highest?.number || 0) + 1;
+      newNextSprint = await Sprint.create({ number, startDate: start, endDate: end, status: 'future' });
+    }
+
+    // Move all non-Done todos of the closing sprint to the next one, resetting scrum status.
+    const moveResult = await Todo.updateMany(
+      { sprintId: currentSprint._id, scrumStatus: { $ne: 'Done' } },
+      { $set: { sprintId: nextSprint._id, scrumStatus: 'Ready', status: 'Neu' } }
+    );
+
+    // Promote the follow-up sprint to current after move is persisted.
+    nextSprint.status = 'current';
+    await nextSprint.save();
+
+    // Promote the future sprint to next and create another future sprint if needed.
+    newNextSprint.status = 'next';
+    await newNextSprint.save();
+
+    const existingFuture = await Sprint.findOne({ status: 'future', _id: { $ne: newNextSprint._id } });
+    if (!existingFuture) {
+      const reference = new Date(newNextSprint.endDate + 'T00:00:00Z');
+      const nextSunday = new Date(reference);
+      nextSunday.setUTCDate(reference.getUTCDate() + (reference.getUTCDay() === 0 ? 7 : 7 - reference.getUTCDay()));
+      const start = formatDateOnlyUTC(nextSunday);
+      const nextEndDate = new Date(nextSunday);
+      nextEndDate.setUTCDate(nextSunday.getUTCDate() + 6);
+      const end = formatDateOnlyUTC(nextEndDate);
+
+      const highest = await Sprint.findOne().sort({ number: -1 });
+      const number = (highest?.number || 0) + 1;
+      await Sprint.create({ number, startDate: start, endDate: end, status: 'future' });
+    }
+
+    res.json({
+      closedSprint: formatSprint(currentSprint),
+      newCurrentSprint: formatSprint(nextSprint),
+      movedTodoCount: moveResult?.nModified || moveResult?.modifiedCount || 0
+    });
+  } catch (error) {
+    console.error('Error closing sprint:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid sprint id');
+    res.status(500).json({ error: 'Failed to close sprint' });
   }
 });
 

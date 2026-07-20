@@ -9,12 +9,14 @@ import {
   DroppableStateSnapshot,
   DropResult
 } from '@hello-pangea/dnd';
-import { SprintBucket, Todo } from '../types';
+import { Sprint, SprintBucket, Todo } from '../types';
 import { Calendar, Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, Star, CalendarDays } from 'lucide-react';
 import { isBeforeTodayDateOnly, isDueTodayDateOnly, parseDateOnly } from '../utils/dateOnly';
 
 export interface TodoListProps {
   todos: Todo[];
+  currentSprint: Sprint | null;
+  nextSprint: Sprint | null;
   onView: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (id: string) => void;
@@ -22,14 +24,12 @@ export interface TodoListProps {
   onSprintBucketChange: (todo: Todo, sprintBucket: SprintBucket) => void;
 }
 
-const BUCKETS: { key: SprintBucket; title: string }[] = [
-  { key: 'current', title: 'Aktueller Sprint' },
-  { key: 'next', title: 'Nächster Sprint' },
-  { key: 'none', title: 'Nicht zugeordnet' }
-];
+const BUCKETS: SprintBucket[] = ['current', 'next', 'none'];
 
 export function TodoList({
   todos = [],
+  currentSprint,
+  nextSprint,
   onView,
   onEdit,
   onDelete,
@@ -199,27 +199,47 @@ export function TodoList({
 
   const sortedTodos = [...backlogTodos].sort((a, b) => {
     // Sort by status first (Neu, In Bearbeitung, Erledigt, Unerledigt geschlossen)
-    const statusOrder = { 
-      'Neu': 0, 
-      'In Bearbeitung': 1, 
+    const statusOrder = {
+      'Neu': 0,
+      'In Bearbeitung': 1,
       'Erledigt': 2,
       'Unerledigt geschlossen': 3
     };
     const statusDiff = statusOrder[a.status] - statusOrder[b.status];
     if (statusDiff !== 0) return statusDiff;
-    
+
     // Then by due date
     const dateDiff = parseDateOnly(a.dueDate).getTime() - parseDateOnly(b.dueDate).getTime();
     if (dateDiff !== 0) return dateDiff;
-    
+
     // Finally by priority
-    const priorityOrder = { 
-      'Super wichtig': 0, 
-      'Bald erledigen': 1, 
+    const priorityOrder = {
+      'Super wichtig': 0,
+      'Bald erledigen': 1,
       'Hat Zeit': 2
     };
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
+
+  const getBucket = (todo: Todo): SprintBucket => {
+    if (currentSprint && todo.sprintId === currentSprint.id) return 'current';
+    if (nextSprint && todo.sprintId === nextSprint.id) return 'next';
+    return 'none';
+  };
+
+  const getBucketTitle = (key: SprintBucket): string => {
+    if (key === 'current') {
+      return currentSprint
+        ? `Aktueller Sprint (${formatDate(currentSprint.startDate)} – ${formatDate(currentSprint.endDate)})`
+        : 'Aktueller Sprint';
+    }
+    if (key === 'next') {
+      return nextSprint
+        ? `Nächster Sprint (${formatDate(nextSprint.startDate)} – ${formatDate(nextSprint.endDate)})`
+        : 'Nächster Sprint';
+    }
+    return 'Nicht zugeordnet';
+  };
 
   const groupedByBucket: Record<SprintBucket, Todo[]> = {
     current: [],
@@ -228,7 +248,7 @@ export function TodoList({
   };
 
   for (const todo of sortedTodos) {
-    const bucket: SprintBucket = (todo.sprintBucket || 'none') as SprintBucket;
+    const bucket = getBucket(todo);
     groupedByBucket[bucket].push(todo);
   }
 
@@ -373,26 +393,26 @@ export function TodoList({
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="d-flex flex-column gap-3">
             {BUCKETS.map(bucket => (
-              <div key={bucket.key}>
+              <div key={bucket}>
                 <div className="card">
                   <div className="card-header bg-white">
                     <div className="d-flex justify-content-between align-items-center">
-                      <strong>{bucket.title}</strong>
+                      <strong>{getBucketTitle(bucket)}</strong>
                       <div className="d-flex align-items-center gap-2">
-                        {bucket.key === 'current' || bucket.key === 'next' ? (
+                        {bucket === 'current' || bucket === 'next' ? (
                           <span
-                            className={`badge ${totalHoursByBucket[bucket.key] > 40 ? 'text-bg-danger' : 'text-bg-light text-dark border'}`}
+                            className={`badge ${totalHoursByBucket[bucket] > 40 ? 'text-bg-danger' : 'text-bg-light text-dark border'}`}
                             title="Kumulierte Stunden (aus Punkten)"
                           >
-                            {totalHoursByBucket[bucket.key]}h
+                            {totalHoursByBucket[bucket]}h
                           </span>
                         ) : null}
-                        <span className="badge text-bg-secondary">{groupedByBucket[bucket.key].length}</span>
+                        <span className="badge text-bg-secondary">{groupedByBucket[bucket].length}</span>
                       </div>
                     </div>
                   </div>
 
-                  <Droppable droppableId={bucket.key}>
+                  <Droppable droppableId={bucket}>
                     {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                       <div
                         ref={provided.innerRef}
@@ -400,7 +420,7 @@ export function TodoList({
                         className={`card-body p-2 ${snapshot.isDraggingOver ? 'bg-light' : ''}`}
                         style={{ minHeight: 200 }}
                       >
-                        {groupedByBucket[bucket.key].map((todo, index) => (
+                        {groupedByBucket[bucket].map((todo, index) => (
                           <Draggable key={todo.id} draggableId={todo.id} index={index}>
                             {(dragProvided: DraggableProvided, dragSnapshot: DraggableStateSnapshot) =>
                               renderTodoCard(todo, dragProvided, dragSnapshot)

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app } = require('./setup');
+const app = require('../../server-mongo');
 
 describe('James API integration tests', () => {
   const createTodo = (overrides = {}) =>

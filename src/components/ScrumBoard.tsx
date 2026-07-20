@@ -9,7 +9,7 @@ import {
   DroppableStateSnapshot,
   DropResult
 } from '@hello-pangea/dnd';
-import { ScrumStatus, Todo } from '../types';
+import { ScrumStatus, Sprint, Todo } from '../types';
 import { isBeforeTodayDateOnly, isDueTodayDateOnly } from '../utils/dateOnly';
 
 const STATUSES: { key: ScrumStatus; title: string }[] = [
@@ -46,15 +46,16 @@ function groupByScrumStatus(todos: Todo[]): Record<ScrumStatus, Todo[]> {
 
 interface ScrumBoardProps {
   todos: Todo[];
+  currentSprint: Sprint | null;
   onScrumStatusChange: (todo: Todo, scrumStatus: ScrumStatus) => void;
 }
 
-export function ScrumBoard({ todos, onScrumStatusChange }: ScrumBoardProps) {
+export function ScrumBoard({ todos, currentSprint, onScrumStatusChange }: ScrumBoardProps) {
   const [loading] = useState(false);
 
   const currentSprintTodos = useMemo(
-    () => todos.filter(t => (t.sprintBucket || 'none') === 'current'),
-    [todos]
+    () => currentSprint ? todos.filter(t => t.sprintId === currentSprint.id) : [],
+    [todos, currentSprint]
   );
 
   const grouped = useMemo(() => groupByScrumStatus(currentSprintTodos), [currentSprintTodos]);
@@ -83,6 +84,15 @@ export function ScrumBoard({ todos, onScrumStatusChange }: ScrumBoardProps) {
 
   return (
     <div>
+      {currentSprint ? (
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h4 className="h5 mb-0">
+            Sprint {currentSprint.number} · {currentSprint.startDate} – {currentSprint.endDate}
+          </h4>
+        </div>
+      ) : (
+        <div className="alert alert-info mb-3">Kein aktueller Sprint vorhanden.</div>
+      )}
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="row g-3">
           {STATUSES.map(col => (

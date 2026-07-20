@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrumStatus, SprintBucket, Todo } from './types';
+import { ScrumStatus, Sprint, SprintBucket, Todo } from './types';
 import { todoService } from './services/todoService';
+import { sprintService } from './services/sprintService';
 import { TodoList } from './components/TodoList';
 import { TodoForm } from './components/TodoForm';
 import { TodoDetail } from './components/TodoDetail';
@@ -16,13 +17,16 @@ type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic';
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [currentSprint, setCurrentSprint] = useState<Sprint | null>(null);
+  const [nextSprint, setNextSprint] = useState<Sprint | null>(null);
   const [currentView, setCurrentView] = useState<View>('list');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTodos();
+    const finishLoading = () => { setLoading(false); };
+    Promise.all([loadTodos(), loadSprints()]).finally(finishLoading);
   }, []);
 
   const loadTodos = async () => {
@@ -31,10 +35,17 @@ function App() {
       setTodos(loadedTodos);
     } catch (error) {
       console.error('Failed to load todos:', error);
-      alert('Fehler beim Laden der Aufgaben. Bitte überprüfen Sie die Serververbindung.');
       setTodos([]);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadSprints = async () => {
+    try {
+      const all = await sprintService.getSprints().catch(() => []);
+      setCurrentSprint(all.find(s => s.status === 'current') || null);
+      setNextSprint(all.find(s => s.status === 'next') || null);
+    } catch (error) {
+      console.error('Failed to load sprints:', error);
     }
   };
 
@@ -62,6 +73,7 @@ function App() {
 
   const handleSaveTodo = async (todo: Todo) => {
     const prevTodo = todo.id ? todos.find(t => t.id === todo.id) : undefined;
+    const effectiveSprintId = todo.sprintId || currentSprint?.id;
     try {
       if (todo.id) {
         const mutationVersion = beginTodoMutation(todo.id);
@@ -76,6 +88,7 @@ function App() {
           points: todo.points,
           repeatWeekly: Boolean(todo.repeatWeekly),
           repeatMonthly: Boolean(todo.repeatMonthly),
+          sprintId: effectiveSprintId,
           sprintBucket: todo.sprintBucket,
           scrumStatus: todo.scrumStatus,
           epicId: todo.epicId || undefined
@@ -92,6 +105,7 @@ function App() {
           points: todo.points,
           repeatWeekly: Boolean(todo.repeatWeekly),
           repeatMonthly: Boolean(todo.repeatMonthly),
+          sprintId: effectiveSprintId,
           sprintBucket: todo.sprintBucket,
           scrumStatus: todo.scrumStatus,
           epicId: todo.epicId || undefined
@@ -180,10 +194,16 @@ function App() {
     }
   };
 
+  const getSprintIdForBucket = (sprintBucket: SprintBucket): string | null => {
+    if (sprintBucket === 'current') return currentSprint?.id || null;
+    if (sprintBucket === 'next') return nextSprint?.id || null;
+    return null;
+  };
+
   const handleMoveDoneToBacklog = (todo: Todo) => {
     const updatedTodo: Todo = {
       ...todo,
-      sprintBucket: 'none',
+      sprintId: null,
       scrumStatus: 'Ready',
       status: 'Neu'
     };
@@ -200,7 +220,7 @@ function App() {
     const mutationVersion = beginTodoMutation(todo.id);
     setTodos(updatedTodos);
     todoService.updateTodo(todo.id, {
-      sprintBucket: 'none',
+      sprintId: null,
       scrumStatus: 'Ready',
       status: 'Neu'
     }).then(saved => {
@@ -215,9 +235,10 @@ function App() {
   };
 
   const handleSprintBucketChange = (todo: Todo, sprintBucket: SprintBucket) => {
+    const sprintId = getSprintIdForBucket(sprintBucket);
     const updatedTodo: Todo = {
       ...todo,
-      sprintBucket,
+      sprintId,
       scrumStatus: sprintBucket === 'current' ? 'Ready' : todo.scrumStatus
     };
 
@@ -233,7 +254,7 @@ function App() {
     const mutationVersion = beginTodoMutation(todo.id);
     setTodos(updatedTodos);
     todoService.updateTodo(todo.id, {
-      sprintBucket,
+      sprintId,
       scrumStatus: sprintBucket === 'current' ? 'Ready' : todo.scrumStatus
     }).then(saved => {
       if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
@@ -307,6 +328,44 @@ function App() {
     todoService.downloadTodoJson(todos);
   };
 
+  const canCloseSprint = (sprint: Sprint | null): boolean => {
+    if (!sprint) return false;
+    const now = new Date();
+    const berlinDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(now);
+    return berlinDate >= sprint.endDate;
+  };
+
+  const getCloseSprintSummary = (sprint: Sprint): { ready: number; inProgress: number; review: number } => {
+    const relevant = todos.filter(t => t.sprintId === sprint.id);
+    return {
+      ready: relevant.filter(t => t.scrumStatus === 'Ready').length,
+      inProgress: relevant.filter(t => t.scrumStatus === 'In Progress').length,
+      review: relevant.filter(t => t.scrumStatus === 'Review').length
+    };
+  };
+
+  const handleCloseSprint = async () => {
+    if (!currentSprint) return;
+    const summary = getCloseSprintSummary(currentSprint);
+    const total = summary.ready + summary.inProgress + summary.review;
+    const message = `Sprint ${currentSprint.number} wirklich beenden?\n\n` +
+      `Es werden verschoben:\n` +
+      `- ${summary.ready} offene Aufgaben\n` +
+      `- ${summary.inProgress} Aufgaben in Progress\n` +
+      `- ${summary.review} Aufgaben in Review\n\n` +
+      `${total === 0 ? 'Es gibt keine offenen Aufgaben.' : `Erledigte Aufgaben bleiben im abgeschlossenen Sprint.`}`;
+    if (!window.confirm(message)) return;
+
+    try {
+      const result = await sprintService.closeSprint(currentSprint.id);
+      setCurrentSprint(result.newCurrentSprint);
+      await Promise.all([loadTodos(), loadSprints()]);
+    } catch (error) {
+      console.error('Failed to close sprint:', error);
+      alert('Sprint konnte nicht beendet werden.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center">
@@ -367,23 +426,36 @@ function App() {
                 </div>
               )}
             </div>
-            {currentView === 'list' && viewMode !== 'board' && (
+            {currentView === 'list' && (
               <div className="d-flex gap-2">
-                <button
-                  onClick={handleExportJson}
-                  className="btn btn-outline-success d-flex align-items-center gap-2"
-                  title="Als JSON exportieren"
-                >
-                  <Download className="w-5 h-5" />
-                  <span>Export</span>
-                </button>
-                <button
-                  onClick={handleCreateTodo}
-                  className="btn btn-primary d-flex align-items-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Neue Aufgabe</span>
-                </button>
+                {viewMode === 'board' && canCloseSprint(currentSprint) && (
+                  <button
+                    onClick={handleCloseSprint}
+                    className="btn btn-warning d-flex align-items-center gap-2"
+                    title={`Sprint ${currentSprint?.number} beenden`}
+                  >
+                    <span>Sprint beenden</span>
+                  </button>
+                )}
+                {viewMode !== 'board' && (
+                  <>
+                    <button
+                      onClick={handleExportJson}
+                      className="btn btn-outline-success d-flex align-items-center gap-2"
+                      title="Als JSON exportieren"
+                    >
+                      <Download className="w-5 h-5" />
+                      <span>Export</span>
+                    </button>
+                    <button
+                      onClick={handleCreateTodo}
+                      className="btn btn-primary d-flex align-items-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Neue Aufgabe</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -393,6 +465,8 @@ function App() {
           {currentView === 'list' && viewMode === 'list' && (
             <TodoList
               todos={todos}
+              currentSprint={currentSprint}
+              nextSprint={nextSprint}
               onView={handleViewTodo}
               onEdit={handleEditTodo}
               onDelete={handleDeleteTodo}
@@ -411,7 +485,11 @@ function App() {
           )}
 
           {currentView === 'list' && viewMode === 'board' && (
-            <ScrumBoard todos={todos} onScrumStatusChange={handleScrumStatusChange} />
+            <ScrumBoard
+              todos={todos}
+              currentSprint={currentSprint}
+              onScrumStatusChange={handleScrumStatusChange}
+            />
           )}
 
           {currentView === 'list' && viewMode === 'done' && (
