@@ -1,44 +1,39 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-# MongoDB Backup script for James
-# Reads connection and retention settings from environment variables.
-# All config can be overridden via environment:
-#   MONGODB_URI     full MongoDB connection string (required if not set)
-#   BACKUP_DIR      target directory (default: ./backups)
-#   KEEP_DAYS       retention in days, 0 = keep forever (default: 14)
-#   DB_NAME         explicit database name (default: extracted from MONGODB_URI)
+set -Eeuo pipefail
 
-MONGODB_URI="${MONGODB_URI:-mongodb://127.0.0.1:27017/james-todos}"
+MONGODB_URI="${MONGODB_URI:-mongodb://127.0.0.1:27017}"
+MONGODB_DATABASE="${MONGODB_DATABASE:-james-todos}"
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
-KEEP_DAYS="${KEEP_DAYS:-14}"
+RETENTION_DAYS="${RETENTION_DAYS:-30}"
 
-if ! command -v mongodump &> /dev/null; then
-  echo "Error: mongodump not found in PATH" >&2
-  exit 1
-fi
+TIMESTAMP="$(date '+%Y-%m-%d_%H-%M-%S')"
+BACKUP_FILE="${BACKUP_DIR}/${MONGODB_DATABASE}_${TIMESTAMP}.archive.gz"
 
-DB_NAME="${DB_NAME:-$(echo "$MONGODB_URI" | sed -n 's|.*/\([^/?]*\).*|$\1|p')}"
-if [ -z "$DB_NAME" ]; then
-  echo "Error: Could not extract database name from MONGODB_URI" >&2
-  exit 1
-fi
+command -v mongodump >/dev/null 2>&1 || {
+    echo "Fehler: mongodump ist nicht installiert." >&2
+    exit 1
+}
 
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_NAME="${DB_NAME}_${TIMESTAMP}"
-BACKUP_PATH="$BACKUP_DIR/$BACKUP_NAME"
-mkdir -p "$BACKUP_PATH"
+mkdir -p "$BACKUP_DIR"
 
-echo "Creating backup of $DB_NAME at $BACKUP_PATH ..."
-mongodump --uri="$MONGODB_URI" --db="$DB_NAME" --out="$BACKUP_PATH" --gzip
+echo "Erstelle Backup der Datenbank '${MONGODB_DATABASE}' ..."
 
-echo "Compressing backup ..."
-tar -czf "${BACKUP_PATH}.tar.gz" -C "$BACKUP_DIR" "$BACKUP_NAME"
-rm -rf "$BACKUP_PATH"
+mongodump \
+    --uri="$MONGODB_URI" \
+    --db="$MONGODB_DATABASE" \
+    --archive="$BACKUP_FILE" \
+    --gzip
 
-echo "Backup created: ${BACKUP_PATH}.tar.gz"
+echo "Backup erstellt:"
+echo "$BACKUP_FILE"
 
-if [ "$KEEP_DAYS" -gt 0 ]; then
-  echo "Removing backups older than $KEEP_DAYS days ..."
-  find "$BACKUP_DIR" -maxdepth 1 -name "${DB_NAME}_*.tar.gz" -type f -mtime +"$KEEP_DAYS" -print -delete
+if [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]] && (( RETENTION_DAYS > 0 )); then
+    echo "Lösche Backups, die älter als ${RETENTION_DAYS} Tage sind ..."
+
+    find "$BACKUP_DIR" \
+        -type f \
+        -name "${MONGODB_DATABASE}_*.archive.gz" \
+        -mtime "+${RETENTION_DAYS}" \
+        -delete
 fi
