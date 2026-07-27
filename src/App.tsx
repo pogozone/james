@@ -96,6 +96,14 @@ function App() {
         if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
         replaceTodoInState(saved);
       } else {
+        const sprintIdForCreate = (() => {
+          if (todo.sprintId !== undefined) return todo.sprintId;
+          if (todo.sprintBucket === 'current') return currentSprint?.id || null;
+          if (todo.sprintBucket === 'next') return nextSprint?.id || null;
+          if (todo.sprintBucket === 'none') return null;
+          return currentSprint?.id;
+        })();
+
         const created = await todoService.createTodo({
           title: todo.title,
           description: todo.description || '',
@@ -105,7 +113,7 @@ function App() {
           points: todo.points,
           repeatWeekly: Boolean(todo.repeatWeekly),
           repeatMonthly: Boolean(todo.repeatMonthly),
-          sprintId: effectiveSprintId,
+          sprintId: sprintIdForCreate,
           sprintBucket: todo.sprintBucket,
           scrumStatus: todo.scrumStatus,
           epicId: todo.epicId || undefined

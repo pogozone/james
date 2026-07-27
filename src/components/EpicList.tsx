@@ -42,11 +42,15 @@ export function EpicList({ todos }: EpicListProps) {
     return map;
   }, [todos]);
 
+  const sortEpicsByTitle = (list: Epic[]): Epic[] => {
+    return [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' }));
+  };
+
   const load = async () => {
     setLoading(true);
     try {
       const loaded = await epicService.getEpics();
-      setEpics(loaded);
+      setEpics(sortEpicsByTitle(loaded));
     } finally {
       setLoading(false);
     }
@@ -61,7 +65,7 @@ export function EpicList({ todos }: EpicListProps) {
     if (!t) return;
 
     const created = await epicService.createEpic({ title: t, description: description.trim() || undefined });
-    setEpics(prev => [created, ...prev]);
+    setEpics(prev => sortEpicsByTitle([created, ...prev]));
     setTitle('');
     setDescription('');
   };
@@ -90,7 +94,7 @@ export function EpicList({ todos }: EpicListProps) {
     const t = editTitle.trim();
     if (!t) return;
     const updated = await epicService.updateEpic(id, { title: t, description: editDescription.trim() || undefined });
-    setEpics(prev => prev.map(e => (e.id === id ? updated : e)));
+    setEpics(prev => sortEpicsByTitle(prev.map(e => (e.id === id ? updated : e))));
     cancelEdit();
   };
 
@@ -110,7 +114,7 @@ export function EpicList({ todos }: EpicListProps) {
           title: t,
           description: editDescription.trim() || undefined
         });
-        setEpics(prev => prev.map(e => (e.id === editingEpicId ? updated : e)));
+        setEpics(prev => sortEpicsByTitle(prev.map(e => (e.id === editingEpicId ? updated : e))));
         editDirtyRef.current = false;
       } catch (error) {
         console.error('Failed to auto-save epic:', error);

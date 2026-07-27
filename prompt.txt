@@ -48,7 +48,7 @@ Version scrum 0.0.1
 - Aufgaben können im Backlog per drag&drop zwischen den drei Abteilungen verschoben werden
 - Wird eine Aufgabe im Backlog in den aktuellen Sprint gezogen erscheint die Aufgabe direkt auf den Scrum Board unter Ready
 - Ein Sprint dauert immer eine Woche von Sonntag bis Samstag.
-- Aufgaben, die im Sprint nicht erledigt wurden, wandern automatisch in den nächsten Sprint
+- Aufgaben, die im Sprint nicht erledigt wurden, wandern automatisch bei Beendigung des Sprints in den nächsten Sprint
 - Aus der Liste wird das Backlog
 - Das Backlog erscheint nicht auf dem Scrum Board
 - Auf dem Scrum Board: In der Spalte "Done" stehen nur Aufgaben, die im aktuellen Sprint erledigt wurden
@@ -153,6 +153,140 @@ Wichtig:
 - Keine bestehende Funktionalität verändern.
 - Keine produktiven Daten in Tests verwenden.
 - Am Ende kurz dokumentieren, welche Dateien neu angelegt oder geändert wurden und wie Tests, Backup und Restore ausgeführt werden.
+
+EndSprint
+# Sprintverwaltung vollständig implementieren
+Bitte implementiere eine vollständige und robuste Sprintverwaltung nach den folgenden fachlichen Regeln.
+## Sprintmodell
+* Ein Sprint ist ein eigenständiges Objekt.
+* Jeder Sprint besitzt mindestens:
+  * eindeutige ID
+  * Sprintnummer
+  * Startdatum
+  * Enddatum
+  * Status (`current`, `next`, `future`, `closed`)
+  * Erstellungsdatum
+  * Abschlussdatum
+Ein Sprint dauert immer **eine Kalenderwoche von Sonntag bis Samstag**.
+Todos dürfen **nicht** mehr nur über `current` und `next` verwaltet werden, sondern müssen einem konkreten Sprint zugeordnet sein.
+Die Sprint-Historie muss dauerhaft erhalten bleiben.
+# Anzeige des Sprint-Endes
+Sobald der Endtag des aktuellen Sprints erreicht ist (Samstag, lokale Zeitzone Europe/Berlin), erscheint auf dem Scrum Board ein Button:
+**Sprint beenden**
+Der Button bleibt sichtbar, bis der Sprint tatsächlich beendet wurde.
+Wird der Sprint erst am Sonntag oder mehrere Tage später beendet, bleibt der Button ebenfalls sichtbar.
+# Verhalten beim Beenden eines Sprints
+Beim Klick auf **Sprint beenden** erfolgt ein atomarer Backend-Vorgang.
+Folgende Schritte werden vollständig oder gar nicht ausgeführt.
+## 1. Aktuellen Sprint schließen
+* Status → `closed`
+* Abschlussdatum setzen
+## 2. Nicht erledigte Aufgaben verschieben
+Alle Aufgaben des aktuellen Sprints, deren Scrum-Status **nicht "Done"** ist:
+* werden dem Folgesprint zugeordnet
+* Scrum-Status wird auf **Neu**
+* allgemeiner Status wird entsprechend synchronisiert
+* Priorität, Story Points, Beschreibung, Wiederholung usw. bleiben unverändert
+## 3. Erledigte Aufgaben
+Aufgaben mit Scrum-Status **Done**
+* bleiben dauerhaft im abgeschlossenen Sprint
+* werden nicht verändert
+* bilden die Sprint-Historie
+## 4. Folgesprint
+Existiert bereits ein Folgesprint:
+* erhält Status `current`
+Existiert noch keiner:
+* automatisch erzeugen
+Der neue Sprint besitzt:
+* nächster Sonntag als Startdatum
+* folgender Samstag als Enddatum
+* Status `current`
+## 5. Weitere zukünftige Sprints
+Existieren bereits zukünftige Sprints, dürfen sie nicht verändert werden.
+# Backlog
+Todos ohne Sprintzuordnung bleiben unverändert.
+Sie dürfen durch das Beenden eines Sprints nicht verändert werden.
+# Sicherheit
+Das Beenden eines Sprints darf nur einmal möglich sein.
+Mehrfaches Klicken oder parallele Requests dürfen:
+* keine Aufgaben doppelt verschieben
+* keine zusätzlichen Sprints erzeugen
+* keine inkonsistenten Zustände erzeugen
+Der Vorgang muss idempotent sein.
+# Fehlerbehandlung
+Kann irgendein Schritt nicht erfolgreich abgeschlossen werden,
+dürfen keinerlei Änderungen dauerhaft gespeichert werden.
+Es darf niemals einen halbfertigen Sprintwechsel geben.
+# Frontend
+Vor dem Beenden erscheint ein Bestätigungsdialog.
+Beispiel:
+Sprint wirklich beenden?
+Es werden verschoben:
+- 7 offene Aufgaben
+- 2 Aufgaben in Progress
+- 1 Aufgabe in Review
+Erledigte Aufgaben bleiben im abgeschlossenen Sprint.
+Nach erfolgreichem Abschluss:
+* Scrum Board aktualisieren
+* Sprintinformationen aktualisieren
+* Burndown-/Sprintzahlen aktualisieren
+* Button "Sprint beenden" verschwindet
+# Datenmodell
+Bitte erweitere das Datenmodell sinnvoll um:
+* Sprint
+* Sprint-ID im Todo
+* Historie
+Vermeide Sonderfälle wie `current` oder `next` als dauerhafte Datenhaltung.
+Die Zuordnung soll ausschließlich über Sprintobjekte erfolgen.
+# API
+Ergänze eine saubere Sprint-API.
+Zum Beispiel:
+* Sprintliste laden
+* aktuellen Sprint laden
+* Sprint beenden
+* zukünftigen Sprint erzeugen
+Verwende REST-konforme Endpunkte.
+# Tests
+Erstelle Integrationstests für mindestens folgende Fälle:
+* Sprint regulär beenden
+* Sprint mehrfach beenden
+* keine offenen Aufgaben
+* alle Aufgaben offen
+* alle Aufgaben erledigt
+* kein Folgesprint vorhanden
+* Folgesprint bereits vorhanden
+* verspätetes Beenden am Sonntag oder später
+* parallele Requests
+* Fehler während des Sprintabschlusses
+# Dokumentation
+Aktualisiere die README um die Sprintlogik.
+Dokumentiere insbesondere:
+* Sprintlebenszyklus
+* Sprintwechsel
+* Aufgabenverschiebung
+* Historie
+* API-Endpunkte
+## Wichtig
+Es sollen **keine bestehenden Funktionen verloren gehen oder ihr Verhalten ändern**.
+Ziel ist eine robuste, wartbare und fachlich saubere Sprintverwaltung, die auch langfristig mehrere Jahre Sprint-Historie korrekt verwalten kann.
+Am Ende bitte einen kurzen Abschlussbericht erstellen:
+* geänderte Dateien
+* neue Dateien
+* Änderungen am Datenmodell
+* neue API-Endpunkte
+* durchgeführte Migrationen
+* verbleibende technische Schulden.
+
+Updates:
+- Im Baclog haben alle Aufgaben zwei Buttons:
+  - "Move to Current Sprint" (verschiebt die Aufgabe in den aktuellen Sprint)
+  - "Move to Next Sprint" (verschiebt die Aufgabe in den nächsten Sprint)
+- Aufgaben im Backlog können per drag & drop sortiert werden
+- Die Liste der Epics soll alphabetisch sortiert werden
+- Ist eine Aufgabe dem "Current Sprint" zugewiesen, dann hat sie keinen Button "Move to Current Sprint" mehr
+- Ist eine Aufgabe dem "Next Sprint" zugewiesen, dann hat sie keinen Button "Move to Next Sprint" mehr
+- Aufgaben in "Current Sprint" und "Next Sprint" haben einen Button "Move to Backlog" um die Aufgabe wieder in den Backlog zu verschieben
+
 
 ToDos:
 Auswertung:

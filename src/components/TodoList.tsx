@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   DragDropContext,
   Draggable,
@@ -195,31 +195,42 @@ export function TodoList({
     }
   };
 
-  const backlogTodos = todos.filter(t => t.status !== 'Erledigt' && t.status !== 'Unerledigt geschlossen');
+  const defaultSortTodos = (list: Todo[]): Todo[] => {
+    return [...list].sort((a, b) => {
+      const statusOrder = { 'Neu': 0, 'In Bearbeitung': 1, 'Erledigt': 2, 'Unerledigt geschlossen': 3 };
+      const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+      if (statusDiff !== 0) return statusDiff;
 
-  const sortedTodos = [...backlogTodos].sort((a, b) => {
-    // Sort by status first (Neu, In Bearbeitung, Erledigt, Unerledigt geschlossen)
-    const statusOrder = {
-      'Neu': 0,
-      'In Bearbeitung': 1,
-      'Erledigt': 2,
-      'Unerledigt geschlossen': 3
-    };
-    const statusDiff = statusOrder[a.status] - statusOrder[b.status];
-    if (statusDiff !== 0) return statusDiff;
+      const dateDiff = parseDateOnly(a.dueDate).getTime() - parseDateOnly(b.dueDate).getTime();
+      if (dateDiff !== 0) return dateDiff;
 
-    // Then by due date
-    const dateDiff = parseDateOnly(a.dueDate).getTime() - parseDateOnly(b.dueDate).getTime();
-    if (dateDiff !== 0) return dateDiff;
+      const priorityOrder = { 'Super wichtig': 0, 'Bald erledigen': 1, 'Hat Zeit': 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+  };
 
-    // Finally by priority
-    const priorityOrder = {
-      'Super wichtig': 0,
-      'Bald erledigen': 1,
-      'Hat Zeit': 2
-    };
-    return priorityOrder[a.priority] - priorityOrder[b.priority];
-  });
+  const mergeOrderedTodos = (prev: Todo[], next: Todo[]): Todo[] => {
+    const nextById = new Map(next.map(t => [t.id, t]));
+    const reordered = prev.map(t => nextById.get(t.id)).filter((t): t is Todo => Boolean(t));
+    const newOnes = next.filter(t => !prev.some(p => p.id === t.id));
+    return [...reordered, ...newOnes];
+  };
+
+  const [orderedTodos, setOrderedTodos] = useState<Todo[]>([]);
+
+  useEffect(() => {
+    const nextBacklog = todos.filter(t => t.status !== 'Erledigt' && t.status !== 'Unerledigt geschlossen');
+    setOrderedTodos(prev => {
+      if (prev.length === 0) return defaultSortTodos(nextBacklog);
+      return mergeOrderedTodos(prev, nextBacklog);
+    });
+  }, [todos]);
+
+  const getSprintIdForBucket = (sprintBucket: SprintBucket): string | null => {
+    if (sprintBucket === 'current') return currentSprint?.id || null;
+    if (sprintBucket === 'next') return nextSprint?.id || null;
+    return null;
+  };
 
   const getBucket = (todo: Todo): SprintBucket => {
     if (currentSprint && todo.sprintId === currentSprint.id) return 'current';
@@ -247,7 +258,7 @@ export function TodoList({
     none: []
   };
 
-  for (const todo of sortedTodos) {
+  for (const todo of orderedTodos) {
     const bucket = getBucket(todo);
     groupedByBucket[bucket].push(todo);
   }
@@ -262,19 +273,50 @@ export function TodoList({
     totalHoursByBucket[bucketKey] = groupedByBucket[bucketKey].reduce((sum, t) => sum + pointsToHours(t.points), 0);
   }
 
+  const globalIndexForBucketIndex = (list: Todo[], bucket: SprintBucket, index: number): number => {
+    let count = 0;
+    for (let i = 0; i < list.length; i++) {
+      if (getBucket(list[i]) === bucket) {
+        if (count === index) return i;
+        count++;
+      }
+    }
+    return list.length;
+  };
+
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
+    const sourceBucket = source.droppableId as SprintBucket;
     const destBucket = destination.droppableId as SprintBucket;
-    const todo = todos.find(t => t.id === draggableId);
-    if (!todo) return;
+    const sourceGlobal = globalIndexForBucketIndex(orderedTodos, sourceBucket, source.index);
+    if (sourceGlobal < 0 || sourceGlobal >= orderedTodos.length) return;
 
-    onSprintBucketChange(todo, destBucket);
+    const moving = orderedTodos[sourceGlobal];
+    const without = orderedTodos.filter((_, i) => i !== sourceGlobal);
+
+    let itemToMove = moving;
+    if (destBucket !== sourceBucket) {
+      itemToMove = {
+        ...moving,
+        sprintId: getSprintIdForBucket(destBucket),
+        scrumStatus: destBucket === 'current' ? 'Ready' : moving.scrumStatus
+      };
+    }
+
+    const destGlobal = globalIndexForBucketIndex(without, destBucket, destination.index);
+    const reordered = [...without];
+    reordered.splice(destGlobal, 0, itemToMove);
+    setOrderedTodos(reordered);
+
+    if (destBucket !== sourceBucket) {
+      onSprintBucketChange(itemToMove, destBucket);
+    }
   };
 
-  if (sortedTodos.length === 0) {
+  if (orderedTodos.length === 0) {
     return (
       <div className="text-center py-5">
         <div className="text-muted mb-4">
@@ -347,6 +389,35 @@ export function TodoList({
                   {isDueToday(todo) ? ' (heute)' : isOverdue(todo) ? ' (überfällig)' : ''}
                 </span>
               </div>
+            </div>
+
+            <div className="d-flex flex-wrap gap-2 mt-2">
+              {getBucket(todo) !== 'current' ? (
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => onSprintBucketChange(todo, 'current')}
+                  disabled={!currentSprint}
+                >
+                  Move to Current Sprint
+                </button>
+              ) : null}
+              {getBucket(todo) !== 'next' ? (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => onSprintBucketChange(todo, 'next')}
+                  disabled={!nextSprint}
+                >
+                  Move to Next Sprint
+                </button>
+              ) : null}
+              {getBucket(todo) !== 'none' ? (
+                <button
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => onSprintBucketChange(todo, 'none')}
+                >
+                  Move to Backlog
+                </button>
+              ) : null}
             </div>
           </div>
 
