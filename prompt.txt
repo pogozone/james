@@ -278,7 +278,7 @@ Am Ende bitte einen kurzen Abschlussbericht erstellen:
 * verbleibende technische Schulden.
 
 Updates:
-- Im Baclog haben alle Aufgaben zwei Buttons:
+- Im Backlog haben alle Aufgaben zwei Buttons:
   - "Move to Current Sprint" (verschiebt die Aufgabe in den aktuellen Sprint)
   - "Move to Next Sprint" (verschiebt die Aufgabe in den nächsten Sprint)
 - Aufgaben im Backlog können per drag & drop sortiert werden
@@ -286,6 +286,7 @@ Updates:
 - Ist eine Aufgabe dem "Current Sprint" zugewiesen, dann hat sie keinen Button "Move to Current Sprint" mehr
 - Ist eine Aufgabe dem "Next Sprint" zugewiesen, dann hat sie keinen Button "Move to Next Sprint" mehr
 - Aufgaben in "Current Sprint" und "Next Sprint" haben einen Button "Move to Backlog" um die Aufgabe wieder in den Backlog zu verschieben
+- Aufgaben, die beim Anlegen ein Datum in der Zukunft haben, sollen automatisch in das "Backlog" verschoben werden
 
 
 ToDos:
