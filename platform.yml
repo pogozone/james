@@ -1,0 +1,18 @@
+manifestVersion: "1"
+
+app:
+  name: james
+  displayName: James
+  version: "0.1.0"
+
+docker:
+  dockerfile: Dockerfile
+  context: .
+
+runtime:
+  port: 3003
+  healthcheck: /james-todos/api/health
+
+database:
+  type: mongodb
+  database: james

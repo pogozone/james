@@ -1,0 +1,9 @@
+node_modules
+build
+.git
+.env
+.env.*
+backups
+scripts/backups
+coverage
+npm-debug.log

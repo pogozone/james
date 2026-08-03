@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -827,6 +828,18 @@ app.post('/james-todos/api/sprints/:id/close', async (req, res) => {
 // Health check
 app.get('/james-todos/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+const buildDirectory = path.join(__dirname, 'build');
+
+app.use(express.static(buildDirectory));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/james-todos/api/')) {
+    return next();
+  }
+
+  res.sendFile(path.join(buildDirectory, 'index.html'));
 });
 
 // Disable trailing slash redirects
