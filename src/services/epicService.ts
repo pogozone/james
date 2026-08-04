@@ -1,6 +1,8 @@
 import { Epic } from '../types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/james-todos/api/' : 'http://localhost:3003/james-todos/api/';
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  (process.env.NODE_ENV === 'production' ? '/james-todos/api/' : 'http://localhost:3003/james-todos/api/');
 
 export const epicService = {
   async getEpics(): Promise<Epic[]> {

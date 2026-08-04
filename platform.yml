@@ -5,6 +5,17 @@ app:
   displayName: James
   version: "0.1.0"
 
+web:
+  local:
+    host: james.emaz.local
+    basePath: /
+    apiBaseUrl: /james-todos/api/
+
+  production:
+    host: www.christian-woldt.de
+    basePath: /james
+    apiBaseUrl: /james/james-todos/api/
+
 docker:
   dockerfile: Dockerfile
   context: .
@@ -16,3 +27,4 @@ runtime:
 database:
   type: mongodb
   database: james
+  urlEnvironmentVariable: MONGODB_URI
