@@ -1,0 +1,202 @@
+/* ==========================================================================
+   buttons.css
+   James – Messing- und Maschinenknöpfe
+   ========================================================================== */
+
+.btn {
+    min-height: 2.4rem;
+    padding: 0.45rem 0.9rem;
+
+    color: #ded4bd;
+
+    background:
+        linear-gradient(
+            180deg,
+            #4a4e45 0%,
+            #30332d 55%,
+            #20221e 100%
+        );
+
+    border: 2px solid #11130f;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.09),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.7),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    letter-spacing: 0.035em;
+
+    text-shadow: 0 1px 0 #000;
+
+    transform: none;
+    transition:
+        color 100ms linear,
+        background 100ms linear,
+        border-color 100ms linear;
+}
+
+.btn:hover,
+.btn:focus {
+    color: #fff1cf;
+
+    background:
+        linear-gradient(
+            180deg,
+            #5a5e53 0%,
+            #393d35 55%,
+            #262923 100%
+        );
+
+    border-color: #6d684f;
+
+    transform: none;
+}
+
+.btn:active,
+.btn.active {
+    background:
+        linear-gradient(
+            180deg,
+            #20221e 0%,
+            #35382f 100%
+        );
+
+    box-shadow:
+        inset 0 3px 5px rgba(0, 0, 0, 0.75);
+
+    transform: none;
+}
+
+.btn:disabled,
+.btn.disabled {
+    color: #777267;
+
+    background: #272923;
+
+    border-color: #3a3c35;
+
+    opacity: 0.65;
+}
+
+
+/* Primär: Messing */
+
+.btn-primary,
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary.active {
+    color: #241707;
+
+    background:
+        linear-gradient(
+            180deg,
+            #d4ad5e 0%,
+            #a77a34 55%,
+            #5d411a 100%
+        );
+
+    border-color: #2b1a07;
+
+    text-shadow:
+        0 1px 0 rgba(255, 242, 193, 0.45);
+}
+
+
+/* Outline-Varianten */
+
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-info {
+    color: #d9cfb8;
+
+    background:
+        linear-gradient(
+            180deg,
+            #44483f,
+            #282b25
+        );
+
+    border-color: #55584e;
+}
+
+
+/* Warnung */
+
+.btn-warning {
+    color: #281706;
+
+    background:
+        linear-gradient(
+            180deg,
+            #d6a04c,
+            #9e6825 58%,
+            #5c3914
+        );
+
+    border-color: #2c1906;
+}
+
+
+/* Gefahr */
+
+.btn-danger,
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    color: #efd8cf;
+
+    background:
+        linear-gradient(
+            180deg,
+            #913b33,
+            #5a1e1b
+        );
+
+    border-color: #310e0d;
+}
+
+
+/* Erfolg */
+
+.btn-success,
+.btn-outline-success:hover,
+.btn-outline-success:focus {
+    color: #e3eadb;
+
+    background:
+        linear-gradient(
+            180deg,
+            #657a59,
+            #43533c
+        );
+
+    border-color: #273023;
+}
+
+
+/* Kleine Buttons */
+
+.btn-sm {
+    min-height: 2rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.85rem;
+}
+
+
+/* Button-Gruppen */
+
+.btn-group > .btn {
+    border-radius: 0;
+}
+
+.btn-group > .btn:first-child {
+    border-radius: 2px 0 0 2px;
+}
+
+.btn-group > .btn:last-child {
+    border-radius: 0 2px 2px 0;
+}

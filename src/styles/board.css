@@ -1,0 +1,244 @@
+/* ==========================================================================
+   board.css
+   James – stabiles Scrumboard
+   ========================================================================== */
+
+
+/* Board-Zeile */
+
+.row.g-3 {
+    align-items: stretch;
+}
+
+
+/* Bootstrap-Spalten stabilisieren */
+
+.row.g-3 > .col-12.col-lg {
+    display: flex;
+    min-width: 0;
+}
+
+
+/* Board-Spalten */
+
+.row.g-3 > .col-12.col-lg > .card.h-100 {
+    position: relative;
+    overflow: visible;
+
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 420px;
+
+    padding: 0;
+    margin: 0;
+
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.014) 0,
+            rgba(255, 255, 255, 0.014) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            160deg,
+            var(--james-iron-light),
+            var(--james-iron) 72%
+        );
+
+    border: 3px solid var(--james-border-dark);
+    outline: 1px solid var(--james-border-metal);
+    outline-offset: -5px;
+    border-radius: 3px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        inset 7px 0 14px rgba(0, 0, 0, 0.16),
+        inset -7px 0 14px rgba(0, 0, 0, 0.16),
+        0 8px 20px rgba(0, 0, 0, 0.45);
+
+    transition: none;
+}
+
+
+/* Pseudoelemente aus card.css deaktivieren */
+
+.row.g-3 > .col-12.col-lg > .card.h-100::before,
+.row.g-3 > .col-12.col-lg > .card.h-100::after {
+    content: none;
+}
+
+
+/* Spaltenkopf */
+
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header {
+    position: relative;
+    flex: 0 0 auto;
+
+    min-height: 54px;
+
+    margin: 8px;
+    padding: 0.75rem 1rem;
+
+    color: #211506;
+
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.045) 0,
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px,
+            transparent 4px
+        ),
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass) 55%,
+            var(--james-brass-dark)
+        ) !important;
+
+    border: 2px solid #251506;
+    outline: 1px solid #d3aa58;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 239, 179, 0.28),
+        inset 0 -2px 0 rgba(57, 35, 9, 0.65),
+        0 3px 7px rgba(0, 0, 0, 0.55);
+
+    font-family: var(--james-font-ui);
+    font-weight: 900;
+    letter-spacing: 0.075em;
+    text-align: center;
+    text-transform: uppercase;
+
+    text-shadow:
+        0 1px 0 rgba(255, 236, 170, 0.45);
+}
+
+
+/* Nieten */
+
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::before,
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::after {
+    content: "";
+
+    position: absolute;
+    top: 50%;
+
+    width: 7px;
+    height: 7px;
+
+    transform: translateY(-50%);
+
+    border: 1px solid #291807;
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 35%,
+            #e2ba64,
+            #8b6328 48%,
+            #35220c 72%
+        );
+
+    pointer-events: none;
+}
+
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::before {
+    left: 8px;
+}
+
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::after {
+    right: 8px;
+}
+
+
+/* Aufgabenbereich */
+
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-body {
+    flex: 1 1 auto;
+
+    min-height: 340px;
+    max-height: 70vh;
+
+    padding: 0.75rem !important;
+
+    overflow-x: hidden;
+    overflow-y: scroll;
+
+    scrollbar-gutter: stable;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018),
+            transparent 18%
+        ),
+        rgba(12, 14, 11, 0.32);
+
+    transition: none;
+}
+
+
+/* Drag-over verändert keine Maße */
+
+.row.g-3 > .col-12.col-lg > .card.h-100 > .card-body.bg-light {
+    background:
+        repeating-linear-gradient(
+            135deg,
+            rgba(183, 132, 49, 0.14) 0,
+            rgba(183, 132, 49, 0.14) 8px,
+            rgba(0, 0, 0, 0.04) 8px,
+            rgba(0, 0, 0, 0.04) 16px
+        ),
+        rgba(14, 16, 13, 0.42) !important;
+
+    box-shadow:
+        inset 0 0 0 2px rgba(211, 166, 82, 0.65);
+
+    outline: 0;
+}
+
+
+/* Zähler */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-header
+.badge {
+    color: #eadab3 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #3e4139,
+            #1e211c
+        ) !important;
+
+    border: 1px solid #0a0b09;
+    outline: 1px solid rgba(221, 184, 103, 0.42);
+    outline-offset: -3px;
+    border-radius: 50%;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+
+/* Drag-and-drop-Placeholder darf die Breite nicht verändern */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> [data-rbd-placeholder-context-id] {
+    width: 100% !important;
+    max-width: 100% !important;
+}

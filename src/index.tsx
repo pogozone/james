@@ -1,6 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './styles/theme.css';
+import './styles/header.css';
+import './styles/buttons.css';
+import './styles/board.css';
+import './styles/task-card.css';
+import './styles/forms.css';
+import './styles/calendar.css';
+import './styles/card.css';
+import './styles/workbensch.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

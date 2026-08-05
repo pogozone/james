@@ -1,0 +1,118 @@
+:root {
+    --james-black: #0d0e0c;
+    --james-coal: #171915;
+    --james-iron: #292c26;
+    --james-iron-light: #393d34;
+
+    --james-brass: #a77a34;
+    --james-brass-light: #d1aa5c;
+    --james-brass-dark: #5d411a;
+    --james-copper: #8e482d;
+
+    --james-paper: #d8c99f;
+    --james-paper-dark: #bba97c;
+
+    --james-text: #ddd3bd;
+    --james-text-muted: #9d937e;
+    --james-ink: #302719;
+
+    --james-danger: #711f1b;
+    --james-warning: #b37b2a;
+    --james-success: #536748;
+
+    --james-border-dark: #090a08;
+    --james-border-metal: #59584d;
+
+    --james-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.45),
+        0 10px 24px rgba(0, 0, 0, 0.35);
+
+    --james-font-ui:
+        Georgia,
+        "Times New Roman",
+        serif;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+
+    color: var(--james-text);
+
+    background:
+        radial-gradient(
+            circle at 15% 10%,
+            rgba(142, 72, 35, 0.18),
+            transparent 28rem
+        ),
+        radial-gradient(
+            circle at 85% 85%,
+            rgba(107, 32, 27, 0.14),
+            transparent 34rem
+        ),
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 5px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.09) 0,
+            rgba(0, 0, 0, 0.09) 1px,
+            transparent 1px,
+            transparent 9px
+        ),
+        linear-gradient(
+            145deg,
+            #1b1d18,
+            var(--james-black) 74%
+        );
+
+    font-family: var(--james-font-ui);
+}
+
+.min-vh-100.bg-light {
+    color: var(--james-text) !important;
+
+    background:
+        radial-gradient(
+            circle at 25% 15%,
+            rgba(140, 72, 37, 0.12),
+            transparent 30rem
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.011) 0,
+            rgba(255, 255, 255, 0.011) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            155deg,
+            #1c1e19,
+            #0d0e0c 76%
+        ) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #e2d6bd;
+    font-family: var(--james-font-ui);
+    font-weight: 800;
+    text-shadow: 0 1px 0 #000;
+}
+
+.text-muted {
+    color: var(--james-text-muted) !important;
+}

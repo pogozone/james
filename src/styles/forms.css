@@ -1,0 +1,166 @@
+/* ==========================================================================
+   forms.css
+   James – Instrumententafel und Werkstattformular
+   ========================================================================== */
+
+.form-label {
+    margin-bottom: 0.35rem;
+
+    color: #d9ccb0;
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+    letter-spacing: 0.025em;
+}
+
+
+/* Eingabefelder */
+
+.form-control,
+.form-select {
+    min-height: 2.6rem;
+
+    color: #eee5d1;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.025),
+            rgba(0, 0, 0, 0.08)
+        ),
+        #191b17;
+
+    border: 2px solid #090a08;
+    outline: 1px solid #505248;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.72),
+        0 1px 0 rgba(255, 255, 255, 0.035);
+
+    font-family: var(--james-font-ui);
+}
+
+
+/* Textbereiche */
+
+textarea.form-control {
+    min-height: 8rem;
+    resize: vertical;
+}
+
+
+/* Platzhalter */
+
+.form-control::placeholder {
+    color: #777062;
+    opacity: 1;
+}
+
+
+/* Fokus */
+
+.form-control:focus,
+.form-select:focus {
+    color: #fff4dd;
+
+    background-color: #1d1f1b;
+
+    border-color: #2b1b08;
+    outline-color: var(--james-brass);
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.68),
+        0 0 0 2px rgba(167, 122, 52, 0.18);
+}
+
+
+/* Select-Optionen */
+
+.form-select option {
+    color: #eee5d1;
+    background: #191b17;
+}
+
+
+/* Input-Gruppen */
+
+.input-group-text {
+    color: #251706;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+
+    border: 2px solid #251506;
+    border-radius: 2px;
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+
+    text-shadow:
+        0 1px 0 rgba(255, 244, 195, 0.4);
+}
+
+
+/* Checkboxen */
+
+.form-check-input {
+    background-color: #171916;
+
+    border: 2px solid #55584e;
+    border-radius: 1px;
+
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.65);
+}
+
+.form-check-input:checked {
+    background-color: var(--james-brass);
+    border-color: var(--james-brass-light);
+}
+
+.form-check-input:focus {
+    border-color: var(--james-brass);
+
+    box-shadow:
+        0 0 0 2px rgba(167, 122, 52, 0.2);
+}
+
+
+/* Hilfetexte */
+
+.form-text {
+    color: var(--james-text-muted);
+}
+
+
+/* Ungültige Eingaben */
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--james-danger);
+    outline-color: #9b3a34;
+}
+
+.invalid-feedback {
+    color: #d99b91;
+}
+
+
+/* Deaktivierte Eingaben */
+
+.form-control:disabled,
+.form-select:disabled {
+    color: #777267;
+
+    background: #242621;
+
+    border-color: #363830;
+
+    opacity: 0.7;
+}

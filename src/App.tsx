@@ -11,6 +11,9 @@ import { DoneList } from './components/DoneList';
 import { EpicList } from './components/EpicList';
 import { Plus, Download, Calendar as CalendarIcon, Columns, CheckCircle, Layers } from 'lucide-react';
 import './App.css';
+import './styles/theme.css';
+import './styles/card.css';
+import './styles/workbensch.css';
 
 type View = 'list' | 'form' | 'detail';
 type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic';

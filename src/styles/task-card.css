@@ -1,0 +1,230 @@
+/* ==========================================================================
+   task-card.css
+   James – Werkstattzettel im Scrumboard
+   ========================================================================== */
+
+
+/* Aufgabenkarte innerhalb einer Scrum-Spalte */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2 {
+    position: relative;
+
+    margin-bottom: 0.8rem !important;
+    padding: 0;
+
+    color: var(--james-ink);
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.45rem,
+            rgba(72, 96, 106, 0.13) 1.45rem,
+            rgba(72, 96, 106, 0.13) calc(1.45rem + 1px)
+        ),
+        linear-gradient(
+            180deg,
+            #ded0a6,
+            #c7b78a
+        ) !important;
+
+    border: 1px solid #74603b;
+    outline: 1px solid rgba(255, 245, 204, 0.25);
+    outline-offset: -4px;
+    border-radius: 1px;
+
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.24),
+        0 3px 4px rgba(0, 0, 0, 0.34),
+        0 8px 14px rgba(0, 0, 0, 0.22);
+
+    transition:
+        box-shadow 100ms linear,
+        opacity 100ms linear;
+}
+
+
+/* Keine Bewegung beim Hover */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2:hover {
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.24),
+        0 4px 5px rgba(0, 0, 0, 0.38),
+        0 10px 17px rgba(0, 0, 0, 0.25);
+}
+
+
+/* Alte Abrissblock-Dekoration entfernen */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2::after {
+    content: none !important;
+}
+
+
+/* Messingklammer */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2::before {
+    content: "";
+
+    position: absolute;
+    z-index: 2;
+
+    top: 8px;
+    left: 11px;
+    right: auto;
+
+    width: 28px;
+    height: 7px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+
+    border: 1px solid #39240c;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 244, 194, 0.42),
+        0 1px 2px rgba(0, 0, 0, 0.42);
+
+    pointer-events: none;
+}
+
+
+/* Karteninhalt */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2
+> .card-body {
+    padding-top: 1.55rem !important;
+}
+
+
+/* Titel */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2
+.fw-semibold {
+    color: #2b2113;
+    font-weight: 800 !important;
+}
+
+
+/* Beschreibung und Metadaten */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2
+.text-muted {
+    color: #685e48 !important;
+}
+
+
+/* Badges */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2
+.badge {
+    border: 1px solid rgba(40, 28, 10, 0.55);
+    border-radius: 2px;
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+
+/* Epic */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2
+.badge.text-bg-dark {
+    color: #f0dfb9 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #3b2b17,
+            #1e150b
+        ) !important;
+}
+
+
+/* Story Points */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2
+.badge.text-bg-secondary {
+    color: #e7ddc6 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #55584f,
+            #30332d
+        ) !important;
+}
+
+
+/* Hohe Priorität */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2.super-important {
+    animation: none !important;
+
+    border-left:
+        5px solid var(--james-danger) !important;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(113, 31, 27, 0.17),
+            transparent 28%
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.45rem,
+            rgba(72, 96, 106, 0.13) 1.45rem,
+            rgba(72, 96, 106, 0.13) calc(1.45rem + 1px)
+        ),
+        linear-gradient(
+            180deg,
+            #decaa2,
+            #c3ad80
+        ) !important;
+}
+
+
+/* Gezogene Karte */
+
+.row.g-3 > .col-12.col-lg > .card.h-100
+> .card-body
+> .card.mb-2.shadow {
+    z-index: 1000;
+
+    opacity: 0.9;
+
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.55) !important;
+}
