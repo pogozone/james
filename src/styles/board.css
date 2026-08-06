@@ -1,17 +1,120 @@
 /* ==========================================================================
-   board.css
+   james.iw/src/styles/board.css
    James – stabiles Scrumboard
+
+   Die gemeinsame Gestaltung der Spaltenköpfe und Nieten liegt in:
+   james.iw/src/styles/panel-header.css
    ========================================================================== */
 
 
-/* Board-Zeile */
+
+
+/* ==========================================================================
+   Sprint-Spaltenköpfe – Nieten bleiben lokal erhalten
+   ========================================================================== */
+
+.row.g-3
+> .col-12.col-lg
+> .card.h-100
+> .card-header {
+    position: relative;
+    flex: 0 0 auto;
+
+    min-height: 54px;
+    margin: 8px;
+    padding: 0.9rem 3rem !important;
+
+    color: #211506;
+
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.045) 0,
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px,
+            transparent 4px
+        ),
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass) 55%,
+            var(--james-brass-dark)
+        ) !important;
+
+    border: 2px solid #251506;
+    outline: 1px solid #d3aa58;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 239, 179, 0.28),
+        inset 0 -2px 0 rgba(57, 35, 9, 0.65),
+        0 3px 7px rgba(0, 0, 0, 0.55);
+
+    font-family: var(--james-font-ui);
+    font-weight: 900;
+    letter-spacing: 0.075em;
+    text-align: center;
+    text-transform: uppercase;
+
+    text-shadow:
+        0 1px 0 rgba(255, 236, 170, 0.45);
+}
+
+.row.g-3
+> .col-12.col-lg
+> .card.h-100
+> .card-header::before,
+.row.g-3
+> .col-12.col-lg
+> .card.h-100
+> .card-header::after {
+    content: "";
+
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+
+    width: 8px;
+    height: 8px;
+
+    transform: translateY(-50%);
+
+    border: 1px solid #291807;
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 35%,
+            #e2ba64,
+            #8b6328 48%,
+            #35220c 72%
+        );
+
+    pointer-events: none;
+}
+
+.row.g-3
+> .col-12.col-lg
+> .card.h-100
+> .card-header::before {
+    left: 12px;
+}
+
+.row.g-3
+> .col-12.col-lg
+> .card.h-100
+> .card-header::after {
+    right: 12px;
+}
+
+/* ==========================================================================
+   Board-Struktur
+   ========================================================================== */
 
 .row.g-3 {
     align-items: stretch;
 }
-
-
-/* Bootstrap-Spalten stabilisieren */
 
 .row.g-3 > .col-12.col-lg {
     display: flex;
@@ -19,7 +122,9 @@
 }
 
 
-/* Board-Spalten */
+/* ==========================================================================
+   Board-Spalten
+   ========================================================================== */
 
 .row.g-3 > .col-12.col-lg > .card.h-100 {
     position: relative;
@@ -68,7 +173,7 @@
 }
 
 
-/* Pseudoelemente aus card.css deaktivieren */
+/* Pseudoelemente aus card.css an der Spalte deaktivieren */
 
 .row.g-3 > .col-12.col-lg > .card.h-100::before,
 .row.g-3 > .col-12.col-lg > .card.h-100::after {
@@ -76,93 +181,25 @@
 }
 
 
-/* Spaltenkopf */
+/* ==========================================================================
+   Spaltenkopf
 
-.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header {
-    position: relative;
+   Farben, Abstände und Nieten kommen aus panel-header.css.
+   Hier stehen nur noch die strukturellen Regeln.
+   ========================================================================== */
+
+.row.g-3
+> .col-12.col-lg
+> .card.h-100
+> .card-header {
     flex: 0 0 auto;
-
-    min-height: 54px;
-
-    margin: 8px;
-    padding: 0.75rem 1rem;
-
-    color: #211506;
-
-    background:
-        repeating-linear-gradient(
-            0deg,
-            rgba(255, 255, 255, 0.045) 0,
-            rgba(255, 255, 255, 0.045) 1px,
-            transparent 1px,
-            transparent 4px
-        ),
-        linear-gradient(
-            180deg,
-            var(--james-brass-light),
-            var(--james-brass) 55%,
-            var(--james-brass-dark)
-        ) !important;
-
-    border: 2px solid #251506;
-    outline: 1px solid #d3aa58;
-    outline-offset: -4px;
-    border-radius: 2px;
-
-    box-shadow:
-        inset 0 1px 0 rgba(255, 239, 179, 0.28),
-        inset 0 -2px 0 rgba(57, 35, 9, 0.65),
-        0 3px 7px rgba(0, 0, 0, 0.55);
-
-    font-family: var(--james-font-ui);
-    font-weight: 900;
-    letter-spacing: 0.075em;
     text-align: center;
-    text-transform: uppercase;
-
-    text-shadow:
-        0 1px 0 rgba(255, 236, 170, 0.45);
 }
 
 
-/* Nieten */
-
-.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::before,
-.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::after {
-    content: "";
-
-    position: absolute;
-    top: 50%;
-
-    width: 7px;
-    height: 7px;
-
-    transform: translateY(-50%);
-
-    border: 1px solid #291807;
-    border-radius: 50%;
-
-    background:
-        radial-gradient(
-            circle at 35% 35%,
-            #e2ba64,
-            #8b6328 48%,
-            #35220c 72%
-        );
-
-    pointer-events: none;
-}
-
-.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::before {
-    left: 8px;
-}
-
-.row.g-3 > .col-12.col-lg > .card.h-100 > .card-header::after {
-    right: 8px;
-}
-
-
-/* Aufgabenbereich */
+/* ==========================================================================
+   Aufgabenbereich
+   ========================================================================== */
 
 .row.g-3 > .col-12.col-lg > .card.h-100 > .card-body {
     flex: 1 1 auto;
@@ -209,7 +246,9 @@
 }
 
 
-/* Zähler */
+/* ==========================================================================
+   Zähler im Spaltenkopf
+   ========================================================================== */
 
 .row.g-3 > .col-12.col-lg > .card.h-100
 > .card-header
@@ -234,7 +273,9 @@
 }
 
 
-/* Drag-and-drop-Placeholder darf die Breite nicht verändern */
+/* ==========================================================================
+   Drag-and-drop-Placeholder
+   ========================================================================== */
 
 .row.g-3 > .col-12.col-lg > .card.h-100
 > .card-body

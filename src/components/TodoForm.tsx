@@ -3,6 +3,7 @@ import { Epic, Todo } from '../types';
 import { epicService } from '../services/epicService';
 import { Calendar, Save, X } from 'lucide-react';
 import { addDaysDateOnly, formatDateOnly, parseDateOnly } from '../utils/dateOnly';
+import { PageHeader } from './PageHeader';
 
 interface TodoFormProps {
   todo?: Todo;
@@ -137,17 +138,19 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
   return (
     <div className="card shadow-sm">
       <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="card-title h2 mb-0">
-            {todo ? 'Aufgabe bearbeiten' : 'Neue Aufgabe erstellen'}
-          </h2>
-          <button
-            onClick={onCancel}
-            className="btn btn-light btn-sm"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        <PageHeader
+          title={todo ? 'Aufgabe bearbeiten' : 'Neue Aufgabe erstellen'}
+          actions={(
+            <button
+              onClick={onCancel}
+              className="btn btn-light btn-sm"
+              type="button"
+              title="Schließen"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        />
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

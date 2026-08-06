@@ -290,6 +290,13 @@ Updates:
 
 
 ToDos:
+- Die erledigten Aufgaben sollen unter Done einen Button für die Detailansicht haben
+- In der Kalenderansicht können Aufgaben per Drag & Drop auf ein anderes Datum verschoben werden:
+    - Die Aufgabe wird dann automatisch dem entsprechenden Sprint zugeordnet
+    - Das Datum der Aufgabe wird ebenfalls angepasst
+    - Einfacher Klick auf eine Aufgabe öffnet die Detailansicht
+    - Klicken und Halten auf eine Aufgabe ermöglicht das Verschieben
+- Die Felder im Epic-Formular sollen untereinander angezeigt werden (Name, Beschreibung)
 Auswertung:
 - Es gibt einen Reiter "Auswertung", der eine Übersicht vergangener Sprints zeigt
 - In der Auswertung steht, wie viele Punkte im Sprint erledigt wurden

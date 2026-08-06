@@ -1,0 +1,383 @@
+/* ==========================================================================
+   james.iw/src/styles/epics.css
+   James – Epic-Verwaltung als Werkstattauftrag
+
+   Verwendet ausschließlich die vorhandene Struktur aus:
+   james.iw/src/components/EpicList.tsx
+
+   Keine Änderungen am React-Code nötig.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Formularrahmen
+   ========================================================================== */
+
+.epics-page > .card.mb-3 {
+    position: relative;
+    overflow: visible;
+
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            160deg,
+            var(--james-iron-light),
+            var(--james-iron) 72%
+        );
+
+    border: 3px solid var(--james-border-dark);
+    outline: 1px solid var(--james-border-metal);
+    outline-offset: -5px;
+    border-radius: 3px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        inset 7px 0 14px rgba(0, 0, 0, 0.14),
+        inset -7px 0 14px rgba(0, 0, 0, 0.14),
+        0 8px 20px rgba(0, 0, 0, 0.44);
+}
+
+
+/* card.css-Dekoration deaktivieren */
+
+.epics-page > .card.mb-3::before,
+.epics-page > .card.mb-3::after {
+    content: none !important;
+}
+
+
+/* Formularfläche */
+
+.epics-page > .card.mb-3 > .card-body {
+    padding: 1rem !important;
+}
+
+
+/* ==========================================================================
+   Formularlayout
+   ========================================================================== */
+
+.epics-page > .card.mb-3
+> .card-body
+> .d-flex.flex-column.flex-md-row.align-items-start.gap-2 {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 1rem !important;
+    align-items: stretch !important;
+}
+
+
+/* Inline-Breiten aus EpicList.tsx neutralisieren */
+
+.epics-page > .card.mb-3
+> .card-body
+> .d-flex.flex-column.flex-md-row.align-items-start.gap-2
+> div {
+    width: 100% !important;
+    max-width: none !important;
+    flex: initial !important;
+}
+
+
+/* ==========================================================================
+   Feldgruppen
+   ========================================================================== */
+
+.epics-page > .card.mb-3
+.form-label {
+    display: block;
+
+    margin-bottom: 0.4rem;
+
+    color: #ddcfb1;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+
+/* Titel */
+
+.epics-page > .card.mb-3
+input.form-control {
+    min-height: 3rem;
+
+    color: #f2ead7;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.025),
+            rgba(0, 0, 0, 0.08)
+        ),
+        #171916;
+
+    border: 2px solid #090a08;
+    outline: 1px solid #56584e;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.7);
+
+    font-family: var(--james-font-ui);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+
+/* Beschreibung */
+
+.epics-page > .card.mb-3
+textarea.form-control {
+    width: 100% !important;
+    min-height: 9rem !important;
+    height: 9rem !important;
+
+    color: #f2ead7;
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.65rem,
+            rgba(131, 153, 158, 0.09) 1.65rem,
+            rgba(131, 153, 158, 0.09) calc(1.65rem + 1px)
+        ),
+        #171916;
+
+    border: 2px solid #090a08;
+    outline: 1px solid #56584e;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.7);
+
+    font-family: var(--james-font-ui);
+    line-height: 1.65rem;
+
+    resize: vertical;
+}
+
+
+/* Fokus */
+
+.epics-page > .card.mb-3
+.form-control:focus {
+    color: #fff8e8;
+
+    background-color: #1c1f1a;
+
+    border-color: #2c1a07;
+    outline-color: var(--james-brass);
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.66),
+        0 0 0 2px rgba(167, 122, 52, 0.18);
+}
+
+
+/* ==========================================================================
+   Aktionsleiste
+   ========================================================================== */
+
+.epics-page > .card.mb-3
+> .card-body
+> .mt-2.d-flex.justify-content-end {
+    margin-top: 1rem !important;
+    padding-top: 0.8rem;
+    padding-bottom: 0 !important;
+
+    border-top: 1px solid rgba(169, 124, 52, 0.3);
+}
+
+
+/* Neu-Button */
+
+.epics-page > .card.mb-3
+.btn.btn-primary {
+    min-width: 9rem;
+}
+
+
+/* ==========================================================================
+   Epic-Karten
+   ========================================================================== */
+
+.epics-page > .card.shadow-sm.mb-3 {
+    position: relative;
+
+    color: var(--james-ink);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(87, 63, 28, 0.08),
+            transparent 28%
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.5rem,
+            rgba(71, 95, 105, 0.11) 1.5rem,
+            rgba(71, 95, 105, 0.11) calc(1.5rem + 1px)
+        ),
+        linear-gradient(
+            180deg,
+            #ddd0a7,
+            #c6b587
+        ) !important;
+
+    border: 1px solid #74603b;
+    border-left: 6px solid var(--james-brass);
+    outline: 1px solid rgba(255, 245, 204, 0.24);
+    outline-offset: -4px;
+    border-radius: 1px;
+
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.23),
+        0 3px 4px rgba(0, 0, 0, 0.33),
+        0 8px 14px rgba(0, 0, 0, 0.21);
+
+    transition: none;
+}
+
+
+/* card.css-Dekoration an Epic-Karten anpassen */
+
+.epics-page > .card.shadow-sm.mb-3::before {
+    content: "";
+
+    position: absolute;
+    z-index: 2;
+
+    top: 10px;
+    left: 12px;
+    right: auto;
+
+    width: 30px;
+    height: 8px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+
+    border: 1px solid #39240c;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 244, 194, 0.42),
+        0 1px 2px rgba(0, 0, 0, 0.42);
+
+    pointer-events: none;
+}
+
+.epics-page > .card.shadow-sm.mb-3::after {
+    content: none !important;
+}
+
+.epics-page > .card.shadow-sm.mb-3
+> .card-body {
+    padding-top: 1.7rem;
+}
+
+
+/* Epic-Titel */
+
+.epics-page > .card.shadow-sm.mb-3
+.fw-semibold {
+    color: #2d2315;
+
+    font-family: var(--james-font-ui);
+    font-size: 1.08rem;
+    font-weight: 900 !important;
+}
+
+
+/* Beschreibung und Metadaten */
+
+.epics-page > .card.shadow-sm.mb-3
+.text-muted {
+    color: #665d49 !important;
+}
+
+
+/* Aufgabenliste */
+
+.epics-page > .card.shadow-sm.mb-3
+.mt-2
+> .d-flex.flex-column.gap-1 {
+    padding: 0.55rem 0.7rem;
+
+    background:
+        rgba(83, 62, 29, 0.07);
+
+    border-left: 3px solid rgba(167, 122, 52, 0.55);
+}
+
+.epics-page > .card.shadow-sm.mb-3
+.mt-2
+> .d-flex.flex-column.gap-1
+> .small {
+    color: #403722;
+
+    padding: 0.15rem 0;
+}
+
+
+/* ==========================================================================
+   Bearbeitungsformular innerhalb einer Epic-Karte
+   ========================================================================== */
+
+.epics-page > .card.shadow-sm.mb-3
+.d-flex.flex-column.flex-md-row.align-items-start.gap-2 {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 1rem !important;
+    align-items: stretch !important;
+}
+
+.epics-page > .card.shadow-sm.mb-3
+.d-flex.flex-column.flex-md-row.align-items-start.gap-2
+> div {
+    width: 100% !important;
+    max-width: none !important;
+    flex: initial !important;
+}
+
+.epics-page > .card.shadow-sm.mb-3
+textarea.form-control {
+    width: 100% !important;
+    min-height: 8rem !important;
+    height: 8rem !important;
+}
+
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .epics-page > .card.mb-3
+    > .card-body
+    > .d-flex.flex-column.flex-md-row.align-items-start.gap-2,
+    .epics-page > .card.shadow-sm.mb-3
+    .d-flex.flex-column.flex-md-row.align-items-start.gap-2 {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,90 @@
+/* ==========================================================================
+   james.iw/src/styles/panel-header.css
+   James – einheitlicher Seitenkopf
+   ========================================================================== */
+
+.james-page-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    min-height: 78px;
+    margin: 0 0 1.5rem;
+    padding: 1.1rem 3rem;
+    color: #211506;
+    background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 1px, transparent 1px 4px),
+        linear-gradient(180deg, var(--james-brass-light), var(--james-brass) 55%, var(--james-brass-dark));
+    border: 2px solid #251506;
+    outline: 1px solid #d3aa58;
+    outline-offset: -4px;
+    border-radius: 2px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,239,179,.28),
+        inset 0 -2px 0 rgba(57,35,9,.65),
+        0 3px 7px rgba(0,0,0,.45);
+    font-family: var(--james-font-ui);
+    text-shadow: 0 1px 0 rgba(255,238,174,.45);
+}
+
+.james-page-header::before,
+.james-page-header::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    transform: translateY(-50%);
+    border: 1px solid #291807;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e2ba64, #8b6328 48%, #35220c 72%);
+    pointer-events: none;
+}
+
+.james-page-header::before { left: 12px; }
+.james-page-header::after { right: 12px; }
+
+.james-page-header__content { min-width: 0; }
+
+.james-page-header__title {
+    margin: 0;
+    color: #211506;
+    font-family: var(--james-font-ui);
+    font-size: 1.35rem;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(255,238,174,.45);
+}
+
+.james-page-header__subtitle {
+    margin-top: .28rem;
+    color: #463015;
+    font-size: .88rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: .025em;
+}
+
+.james-page-header__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .55rem;
+    flex: 0 0 auto;
+}
+
+.james-page-header__actions .btn { margin: 0; }
+
+@media (max-width: 768px) {
+    .james-page-header {
+        align-items: flex-start;
+        gap: .8rem;
+        min-height: 0;
+        padding: 1rem 2.5rem;
+    }
+
+    .james-page-header__actions { flex-wrap: wrap; }
+}

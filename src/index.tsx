@@ -3,13 +3,20 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import './styles/theme.css';
 import './styles/header.css';
-import './styles/buttons.css';
+import './styles/panel-header.css';
+import './styles/forms.css';
+import './styles/card.css';
 import './styles/board.css';
 import './styles/task-card.css';
-import './styles/forms.css';
+import './styles/backlog.css';
+import './styles/done.css';
+import './styles/epics.css';
 import './styles/calendar.css';
-import './styles/card.css';
-import './styles/workbensch.css';
+import './styles/todo-form.css';
+import './styles/todo-detail.css';
+import './styles/bootstrap-overrides.css';
+import './styles/buttons.css';
+
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

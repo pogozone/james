@@ -1,0 +1,614 @@
+/* ==========================================================================
+   james.iw/src/styles/todo-detail.css
+   James – Detailansicht als Werkstattauftrag
+
+   Verwendet ausschließlich die vorhandene Struktur aus:
+   james.iw/src/components/TodoDetail.tsx
+
+   Keine Änderungen am React-Code nötig.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Äußeres Gehäuse
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+) {
+    position: relative;
+    overflow: hidden;
+
+    max-width: 980px;
+    margin: 0 auto 2rem;
+
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            160deg,
+            var(--james-iron-light),
+            var(--james-iron) 72%
+        );
+
+    border: 3px solid var(--james-border-dark);
+    outline: 1px solid var(--james-border-metal);
+    outline-offset: -5px;
+    border-radius: 3px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        inset 8px 0 16px rgba(0, 0, 0, 0.14),
+        inset -8px 0 16px rgba(0, 0, 0, 0.14),
+        0 10px 26px rgba(0, 0, 0, 0.46);
+
+    transition: none;
+}
+
+
+/* card.css-Dekoration am Gehäuse deaktivieren */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)::before,
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)::after {
+    content: none !important;
+}
+
+
+/* ==========================================================================
+   Innenfläche
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body {
+    padding: 1.25rem !important;
+}
+
+
+/* ==========================================================================
+   Bedienleiste
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .d-flex.justify-content-between.align-items-center.mb-4 {
+    position: relative;
+
+    margin: -0.25rem -0.25rem 1.25rem !important;
+    padding: 0.9rem 1rem !important;
+
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.015) 0,
+            rgba(255, 255, 255, 0.015) 1px,
+            transparent 1px,
+            transparent 7px
+        ),
+        linear-gradient(
+            180deg,
+            #383c34,
+            #20231e
+        ) !important;
+
+    border: 2px solid #090a08;
+    outline: 1px solid #5b5b50;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.67),
+        0 4px 10px rgba(0, 0, 0, 0.36);
+
+    text-transform: none;
+}
+
+
+/* Keine Nieten aus panel-header.css in dieser Bedienleiste */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .d-flex.justify-content-between.align-items-center.mb-4::before,
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .d-flex.justify-content-between.align-items-center.mb-4::after {
+    content: none !important;
+}
+
+
+/* Bedienknöpfe */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .d-flex.justify-content-between.align-items-center.mb-4
+.btn {
+    min-width: 9rem;
+}
+
+
+/* ==========================================================================
+   Auftragsbogen
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .mb-4:not(:first-child),
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .pt-3.border-top {
+    position: relative;
+
+    margin-bottom: 1rem !important;
+    padding: 1rem 1.1rem;
+
+    color: var(--james-ink);
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.55rem,
+            rgba(72, 96, 106, 0.11) 1.55rem,
+            rgba(72, 96, 106, 0.11) calc(1.55rem + 1px)
+        ),
+        linear-gradient(
+            180deg,
+            #dfd2aa,
+            #c7b78a
+        );
+
+    border: 1px solid #75613c;
+    outline: 1px solid rgba(255, 245, 204, 0.24);
+    outline-offset: -4px;
+    border-radius: 1px;
+
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.23),
+        0 3px 4px rgba(0, 0, 0, 0.31);
+}
+
+
+/* Titelblock erhält stärkere Gewichtung */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .mb-4:nth-child(2) {
+    padding-top: 1.25rem;
+
+    border-left: 6px solid var(--james-brass);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(167, 122, 52, 0.11),
+            transparent 32%
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.55rem,
+            rgba(72, 96, 106, 0.11) 1.55rem,
+            rgba(72, 96, 106, 0.11) calc(1.55rem + 1px)
+        ),
+        linear-gradient(
+            180deg,
+            #e2d4aa,
+            #c9b88a
+        );
+}
+
+
+/* Metallklammer */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .mb-4:nth-child(2)::before {
+    content: "";
+
+    position: absolute;
+    top: 9px;
+    right: 12px;
+
+    width: 34px;
+    height: 8px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+
+    border: 1px solid #39240c;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 244, 194, 0.42),
+        0 1px 2px rgba(0, 0, 0, 0.4);
+
+    pointer-events: none;
+}
+
+
+/* ==========================================================================
+   Aufgabentitel
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h1.display-6.fw-bold {
+    margin: 0 3rem 0.85rem 0 !important;
+
+    color: #2c2213 !important;
+
+    font-family: var(--james-font-ui);
+    font-size: clamp(1.65rem, 3vw, 2.35rem);
+    font-weight: 900 !important;
+    line-height: 1.15;
+    letter-spacing: 0.025em;
+
+    text-shadow: none;
+}
+
+
+/* ==========================================================================
+   Statusplaketten
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.d-inline-flex.align-items-center.gap-2 {
+    flex-wrap: wrap;
+    gap: 0.45rem !important;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.badge {
+    min-height: 1.9rem;
+    padding: 0.35rem 0.55rem;
+
+    border: 1px solid rgba(25, 17, 8, 0.72);
+    border-radius: 2px;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.badge.text-white,
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.badge.text-white
+span,
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.badge.text-white
+svg {
+    color: #ffffff !important;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.badge.text-bg-dark {
+    color: #f0dfb9 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #3b2b17,
+            #1e150b
+        ) !important;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+.badge.text-bg-warning {
+    color: #281706 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #d4a04d,
+            #986425
+        ) !important;
+}
+
+
+/* ==========================================================================
+   Abschnittsüberschriften
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+
+    margin-bottom: 0.65rem !important;
+    padding-bottom: 0.35rem;
+
+    color: #342817;
+
+    border-bottom: 1px solid rgba(75, 57, 31, 0.33);
+
+    font-family: var(--james-font-ui);
+    font-size: 0.92rem;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    text-shadow: none;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold::before {
+    content: "";
+
+    width: 9px;
+    height: 9px;
+    flex: 0 0 auto;
+
+    border: 1px solid #39240c;
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 35%,
+            var(--james-brass-light),
+            var(--james-brass) 50%,
+            var(--james-brass-dark) 74%
+        );
+}
+
+
+/* ==========================================================================
+   Beschreibung
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+p.text-muted.whitespace-pre-wrap {
+    margin: 0;
+
+    color: #4f4635 !important;
+
+    font-family: var(--james-font-ui);
+    font-size: 1rem;
+    line-height: 1.65;
+
+    white-space: pre-wrap;
+}
+
+
+/* ==========================================================================
+   Fälligkeitsdatum
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold
++ .d-flex.align-items-center.gap-2 {
+    display: inline-flex !important;
+
+    min-height: 2.5rem;
+    padding: 0.45rem 0.65rem;
+
+    color: #eee4cf;
+
+    background:
+        linear-gradient(
+            180deg,
+            #4a4e45,
+            #292c26
+        );
+
+    border: 1px solid #11130f;
+    border-left: 5px solid var(--james-brass);
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 2px 3px rgba(0, 0, 0, 0.28);
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold
++ .d-flex.align-items-center.gap-2
+.text-muted,
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold
++ .d-flex.align-items-center.gap-2
+svg {
+    color: #eee4cf !important;
+}
+
+
+/* Überfällig */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold
++ .d-flex.align-items-center.gap-2
+.text-danger {
+    color: #ffd9d2 !important;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+h3.h5.fw-semibold
++ .d-flex.align-items-center.gap-2:has(.text-danger) {
+    border-left-color: var(--james-danger);
+
+    background:
+        linear-gradient(
+            180deg,
+            #5b2925,
+            #351817
+        );
+}
+
+
+/* ==========================================================================
+   Aufgabe-ID
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .pt-3.border-top {
+    margin-bottom: 0 !important;
+    padding: 0.65rem 0.8rem !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #363a32,
+            #242721
+        );
+
+    border: 1px solid #10110e !important;
+    outline: 1px solid #515348;
+    outline-offset: -4px;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    h1.display-6.fw-bold
+)
+> .card-body
+> .pt-3.border-top
+small.text-muted {
+    color: #c4baa5 !important;
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+}
+
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 680px) {
+    .card.shadow-sm:has(
+        > .card-body
+        h1.display-6.fw-bold
+    )
+    > .card-body
+    > .d-flex.justify-content-between.align-items-center.mb-4 {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.65rem;
+    }
+
+    .card.shadow-sm:has(
+        > .card-body
+        h1.display-6.fw-bold
+    )
+    > .card-body
+    > .d-flex.justify-content-between.align-items-center.mb-4
+    .btn {
+        width: 100%;
+    }
+
+    .card.shadow-sm:has(
+        > .card-body
+        h1.display-6.fw-bold
+    )
+    h1.display-6.fw-bold {
+        margin-right: 0 !important;
+    }
+}

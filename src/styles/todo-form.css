@@ -1,0 +1,599 @@
+/* ==========================================================================
+   james.iw/src/styles/todo-form.css
+   James – Formular „Neue Aufgabe erstellen“ / „Aufgabe bearbeiten“
+
+   Verwendet ausschließlich die vorhandene Struktur aus:
+   james.iw/src/components/TodoForm.tsx
+
+   Keine Änderungen am React-Code nötig.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Formulargehäuse
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+) {
+    position: relative;
+    overflow: hidden;
+
+    max-width: 980px;
+    margin: 0 auto 2rem;
+    padding: 0;
+
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            160deg,
+            var(--james-iron-light),
+            var(--james-iron) 72%
+        );
+
+    border: 3px solid var(--james-border-dark);
+    outline: 1px solid var(--james-border-metal);
+    outline-offset: -5px;
+    border-radius: 3px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        inset 8px 0 16px rgba(0, 0, 0, 0.14),
+        inset -8px 0 16px rgba(0, 0, 0, 0.14),
+        0 10px 26px rgba(0, 0, 0, 0.46);
+
+    transition: none;
+}
+
+
+/* card.css-Dekoration für das Formular deaktivieren */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)::before,
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)::after {
+    content: none !important;
+}
+
+
+/* ==========================================================================
+   Innenfläche
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+> .card-body {
+    padding: 1.25rem !important;
+}
+
+
+/* ==========================================================================
+   Kopfbereich
+   Grundgestaltung und Nieten kommen aus panel-header.css.
+   ========================================================================== */
+
+
+/* Titel */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(1) {
+    grid-column: 1 / -1;
+}
+
+
+/* Beschreibung */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(2) {
+    grid-column: 1 / -1;
+}
+
+
+/* Wiederholungen */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(5) {
+    grid-column: 1 / -1;
+}
+
+
+/* Epic */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(8) {
+    grid-column: 1 / -1;
+}
+
+
+/* Aktionsleiste */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .d-flex.justify-content-end.gap-2 {
+    grid-column: 1 / -1;
+}
+
+
+/* ==========================================================================
+   Feldbeschriftungen
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-label {
+    display: block;
+
+    margin-bottom: 0.4rem;
+
+    color: #ddd0b3;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.065em;
+    text-transform: uppercase;
+}
+
+
+/* ==========================================================================
+   Eingabefelder
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-control,
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-select {
+    width: 100%;
+    min-height: 3rem;
+
+    color: #f3ead7;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.025),
+            rgba(0, 0, 0, 0.08)
+        ),
+        #171916;
+
+    border: 2px solid #090a08;
+    outline: 1px solid #56584e;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.72);
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+}
+
+
+/* Titel größer */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+input[type="text"].form-control {
+    min-height: 3.25rem;
+
+    font-size: 1.05rem;
+}
+
+
+/* Beschreibung als Arbeitsblatt */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+textarea.form-control {
+    min-height: 10rem;
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.65rem,
+            rgba(131, 153, 158, 0.09) 1.65rem,
+            rgba(131, 153, 158, 0.09) calc(1.65rem + 1px)
+        ),
+        #171916;
+
+    line-height: 1.65rem;
+
+    resize: vertical;
+}
+
+
+/* Platzhalter */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-control::placeholder {
+    color: #898274;
+}
+
+
+/* Fokus */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-control:focus,
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-select:focus {
+    color: #fff8e8;
+
+    background-color: #1d201b;
+
+    border-color: #2b1a07;
+    outline-color: var(--james-brass);
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.66),
+        0 0 0 2px rgba(167, 122, 52, 0.18);
+}
+
+
+/* Optionen */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-select
+option {
+    color: #f3ead7;
+    background: #171916;
+}
+
+
+/* ==========================================================================
+   Datum
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.input-group {
+    align-items: stretch;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.input-group
+.form-control {
+    border-right: 0;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.input-group-text {
+    min-width: 3.1rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #241706;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+
+    border: 2px solid #251506;
+    border-left: 0;
+    border-radius: 0 2px 2px 0;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 239, 179, 0.25),
+        inset 0 -2px 0 rgba(57, 35, 9, 0.62);
+}
+
+
+/* ==========================================================================
+   Wiederholungsfeld
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(5) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+
+    padding: 0.75rem;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018),
+            rgba(0, 0, 0, 0.04)
+        ),
+        #20231e;
+
+    border: 2px solid #0b0c0a;
+    outline: 1px solid #4d4f46;
+    outline-offset: -4px;
+
+    box-shadow:
+        inset 0 2px 5px rgba(0, 0, 0, 0.42);
+}
+
+
+/* Einzelne Wiederholungsoption */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(5)
+.form-check {
+    min-height: 2.6rem;
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+
+    display: flex;
+    align-items: center;
+
+    color: #e3d9c3;
+
+    background:
+        linear-gradient(
+            180deg,
+            #343830,
+            #242721
+        );
+
+    border-left: 5px solid #6f7168;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(5)
+.form-check:first-child {
+    border-left-color: #6f979d;
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .mb-3:nth-child(5)
+.form-check:last-child {
+    border-left-color: #c4953e;
+}
+
+
+/* Checkbox */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-check-input {
+    width: 1.15rem;
+    height: 1.15rem;
+    margin: 0 10px 0 0;
+    flex-shrink: 0;
+
+    background-color: #141613;
+
+    border: 2px solid #65685d;
+    border-radius: 1px;
+
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.65);
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-check-input:checked {
+    background-color: var(--james-brass);
+    border-color: var(--james-brass-light);
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+.form-check-label {
+    margin: 0;
+
+    color: #e3d9c3;
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+}
+
+
+/* ==========================================================================
+   Aktionsleiste
+   ========================================================================== */
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .d-flex.justify-content-end.gap-2 {
+    margin-top: 0.25rem;
+    padding-top: 1rem;
+
+    border-top: 1px solid rgba(169, 124, 52, 0.34);
+}
+
+.card.shadow-sm:has(
+    > .card-body
+    > form
+    input[type="text"][required]
+)
+form
+> .d-flex.justify-content-end.gap-2
+.btn {
+    min-width: 9rem;
+}
+
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 760px) {
+    .card.shadow-sm:has(
+        > .card-body
+        > form
+        input[type="text"][required]
+    )
+    form {
+        grid-template-columns: 1fr;
+    }
+
+    .card.shadow-sm:has(
+        > .card-body
+        > form
+        input[type="text"][required]
+    )
+    form
+    > .mb-3,
+    .card.shadow-sm:has(
+        > .card-body
+        > form
+        input[type="text"][required]
+    )
+    form
+    > .d-flex.justify-content-end.gap-2 {
+        grid-column: 1;
+    }
+
+    .card.shadow-sm:has(
+        > .card-body
+        > form
+        input[type="text"][required]
+    )
+    form
+    > .mb-3:nth-child(5) {
+        grid-template-columns: 1fr;
+    }
+
+    .card.shadow-sm:has(
+        > .card-body
+        > form
+        input[type="text"][required]
+    )
+    form
+    > .d-flex.justify-content-end.gap-2 {
+        flex-direction: column-reverse;
+    }
+
+    .card.shadow-sm:has(
+        > .card-body
+        > form
+        input[type="text"][required]
+    )
+    form
+    > .d-flex.justify-content-end.gap-2
+    .btn {
+        width: 100%;
+    }
+}

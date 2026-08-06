@@ -12,6 +12,7 @@ import {
 import { Sprint, SprintBucket, Todo } from '../types';
 import { Calendar, Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, Star, CalendarDays } from 'lucide-react';
 import { isBeforeTodayDateOnly, isDueTodayDateOnly, parseDateOnly } from '../utils/dateOnly';
+import { PageHeader } from './PageHeader';
 
 export interface TodoListProps {
   todos: Todo[];
@@ -458,8 +459,8 @@ export function TodoList({
 
   return (
     <>
-      <div>
-        <h2 className="h2 mb-4">Backlog</h2>
+      <div className="backlog-page">
+        <PageHeader title="Backlog" />
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="d-flex flex-column gap-3">

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Epic, Todo } from '../types';
 import { epicService } from '../services/epicService';
 import { Plus, Save, Trash2, X } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 interface EpicListProps {
   todos: Todo[];
@@ -140,8 +141,8 @@ export function EpicList({ todos }: EpicListProps) {
   }
 
   return (
-    <div>
-      <h2 className="h2 mb-4">Epics</h2>
+    <div className="epics-page">
+      <PageHeader title="Epics" />
 
       <div className="card mb-3">
         <div className="card-body d-flex flex-column">

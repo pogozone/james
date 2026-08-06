@@ -1,196 +1,238 @@
 /* ==========================================================================
-   buttons.css
-   James – Messing- und Maschinenknöpfe
+   james.iw/src/styles/buttons.css
+   James – robuste Maschinenknöpfe mit hohem Kontrast
    ========================================================================== */
 
 .btn {
-    min-height: 2.4rem;
-    padding: 0.45rem 0.9rem;
+    --james-button-accent: #77786f;
+    --james-button-text: #fffaf0;
+    --james-button-bg-top: #4a4e47;
+    --james-button-bg-bottom: #1d201b;
 
-    color: #ded4bd;
+    min-height: 2.5rem;
+    padding: 0.48rem 0.95rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+
+    color: var(--james-button-text) !important;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: 0.025em;
+    text-decoration: none;
 
     background:
         linear-gradient(
             180deg,
-            #4a4e45 0%,
-            #30332d 55%,
-            #20221e 100%
-        );
+            var(--james-button-bg-top) 0%,
+            #32362f 48%,
+            var(--james-button-bg-bottom) 100%
+        ) !important;
 
-    border: 2px solid #11130f;
+    border: 1px solid #050605 !important;
+    border-left: 6px solid var(--james-button-accent) !important;
     border-radius: 2px;
 
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.09),
-        inset 0 -2px 0 rgba(0, 0, 0, 0.7),
-        0 2px 4px rgba(0, 0, 0, 0.4);
+        inset 0 1px 0 rgba(255, 255, 255, 0.11),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.72),
+        0 2px 4px rgba(0, 0, 0, 0.42);
 
-    font-family: Georgia, "Times New Roman", serif;
-    font-weight: 700;
-    letter-spacing: 0.035em;
-
-    text-shadow: 0 1px 0 #000;
+    text-shadow:
+        0 1px 0 #000,
+        0 0 3px rgba(0, 0, 0, 0.85);
 
     transform: none;
     transition:
-        color 100ms linear,
         background 100ms linear,
-        border-color 100ms linear;
+        border-color 100ms linear,
+        color 100ms linear,
+        box-shadow 100ms linear;
 }
 
 .btn:hover,
-.btn:focus {
-    color: #fff1cf;
+.btn:focus-visible {
+    color: #ffffff !important;
 
     background:
         linear-gradient(
             180deg,
-            #5a5e53 0%,
-            #393d35 55%,
+            #5b6057 0%,
+            #3d4139 48%,
             #262923 100%
-        );
+        ) !important;
 
-    border-color: #6d684f;
+    border-color: #000 !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.68),
+        0 3px 6px rgba(0, 0, 0, 0.5);
+
+    outline: 2px solid color-mix(in srgb, var(--james-button-accent) 70%, white 30%);
+    outline-offset: 2px;
 
     transform: none;
 }
 
 .btn:active,
-.btn.active {
+.btn.active,
+.btn.show {
+    color: #ffffff !important;
+
     background:
         linear-gradient(
             180deg,
-            #20221e 0%,
-            #35382f 100%
-        );
+            #181a17 0%,
+            #2a2d27 100%
+        ) !important;
 
     box-shadow:
-        inset 0 3px 5px rgba(0, 0, 0, 0.75);
+        inset 0 4px 7px rgba(0, 0, 0, 0.82);
 
     transform: none;
 }
 
 .btn:disabled,
 .btn.disabled {
-    color: #777267;
-
-    background: #272923;
-
-    border-color: #3a3c35;
-
-    opacity: 0.65;
-}
-
-
-/* Primär: Messing */
-
-.btn-primary,
-.btn-outline-primary:hover,
-.btn-outline-primary:focus,
-.btn-outline-primary.active {
-    color: #241707;
+    color: #aaa69d !important;
 
     background:
         linear-gradient(
             180deg,
-            #d4ad5e 0%,
-            #a77a34 55%,
-            #5d411a 100%
-        );
+            #34372f,
+            #242621
+        ) !important;
 
-    border-color: #2b1a07;
+    border-left-color: #55574f !important;
 
-    text-shadow:
-        0 1px 0 rgba(255, 242, 193, 0.45);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    opacity: 0.68;
 }
 
 
-/* Outline-Varianten */
+/* ==========================================================================
+   Funktionsfarben
+   ========================================================================== */
 
+.btn-primary,
+.btn-outline-primary {
+    --james-button-accent: #c4953e;
+}
+
+.btn-secondary,
+.btn-outline-secondary {
+    --james-button-accent: #85867d;
+}
+
+.btn-success,
+.btn-outline-success {
+    --james-button-accent: #6f8a61;
+}
+
+.btn-danger,
+.btn-outline-danger {
+    --james-button-accent: #a4433a;
+}
+
+.btn-warning,
+.btn-outline-warning {
+    --james-button-accent: #d3a346;
+}
+
+.btn-info,
+.btn-outline-info {
+    --james-button-accent: #6f979d;
+}
+
+.btn-dark,
+.btn-outline-dark {
+    --james-button-accent: #4f514b;
+}
+
+.btn-light,
+.btn-outline-light {
+    --james-button-accent: #c9b98f;
+}
+
+
+/* ==========================================================================
+   Bootstrap-Flächen neutralisieren
+   ========================================================================== */
+
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-dark,
+.btn-light,
 .btn-outline-primary,
 .btn-outline-secondary,
 .btn-outline-success,
 .btn-outline-danger,
-.btn-outline-info {
-    color: #d9cfb8;
+.btn-outline-warning,
+.btn-outline-info,
+.btn-outline-dark,
+.btn-outline-light {
+    color: var(--james-button-text) !important;
 
     background:
         linear-gradient(
             180deg,
-            #44483f,
-            #282b25
-        );
-
-    border-color: #55584e;
+            var(--james-button-bg-top) 0%,
+            #32362f 48%,
+            var(--james-button-bg-bottom) 100%
+        ) !important;
 }
 
 
-/* Warnung */
-
-.btn-warning {
-    color: #281706;
-
-    background:
-        linear-gradient(
-            180deg,
-            #d6a04c,
-            #9e6825 58%,
-            #5c3914
-        );
-
-    border-color: #2c1906;
-}
-
-
-/* Gefahr */
-
-.btn-danger,
-.btn-outline-danger:hover,
-.btn-outline-danger:focus {
-    color: #efd8cf;
-
-    background:
-        linear-gradient(
-            180deg,
-            #913b33,
-            #5a1e1b
-        );
-
-    border-color: #310e0d;
-}
-
-
-/* Erfolg */
-
-.btn-success,
-.btn-outline-success:hover,
-.btn-outline-success:focus {
-    color: #e3eadb;
-
-    background:
-        linear-gradient(
-            180deg,
-            #657a59,
-            #43533c
-        );
-
-    border-color: #273023;
-}
-
-
-/* Kleine Buttons */
+/* ==========================================================================
+   Größen
+   ========================================================================== */
 
 .btn-sm {
     min-height: 2rem;
     padding: 0.3rem 0.65rem;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
+}
+
+.btn-lg {
+    min-height: 3rem;
+    padding: 0.68rem 1.25rem;
+    font-size: 1.05rem;
 }
 
 
-/* Button-Gruppen */
+/* ==========================================================================
+   Icon-Buttons
+   ========================================================================== */
+
+.btn:has(> svg:only-child),
+.btn:has(> i:only-child) {
+    width: 2.5rem;
+    padding-inline: 0;
+}
+
+
+/* ==========================================================================
+   Button-Gruppen
+   ========================================================================== */
 
 .btn-group > .btn {
     border-radius: 0;
+}
+
+.btn-group > .btn + .btn {
+    margin-left: -1px;
 }
 
 .btn-group > .btn:first-child {
@@ -199,4 +241,15 @@
 
 .btn-group > .btn:last-child {
     border-radius: 0 2px 2px 0;
+}
+
+
+/* ==========================================================================
+   Links im Button
+   ========================================================================== */
+
+a.btn,
+a.btn:hover,
+a.btn:focus {
+    text-decoration: none;
 }

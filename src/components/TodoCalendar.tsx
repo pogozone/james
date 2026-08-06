@@ -1,6 +1,7 @@
 import React from 'react';
 import { Todo } from '../types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 interface TodoCalendarProps {
   todos: Todo[];
@@ -144,28 +145,28 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
   
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="h2 mb-0">Kalender</h2>
-        <div className="d-flex align-items-center gap-3">
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="btn btn-outline-secondary btn-sm"
-            title="Vorheriger Monat"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <h3 className="h5 mb-0">
-            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h3>
-          <button
-            onClick={() => navigateMonth('next')}
-            className="btn btn-outline-secondary btn-sm"
-            title="Nächster Monat"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Kalender"
+        subtitle={`${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+        actions={(
+          <>
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="btn btn-outline-secondary btn-sm"
+              title="Vorheriger Monat"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="btn btn-outline-secondary btn-sm"
+              title="Nächster Monat"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
+      />
       
       <div className="calendar-container">
         <div className="calendar-weekdays">

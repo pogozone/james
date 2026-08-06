@@ -1,0 +1,343 @@
+/* ==========================================================================
+   james.iw/src/styles/bootstrap-overrides.css
+   James – Bootstrap-Hilfsklassen
+
+   Wichtig:
+   Diese Datei enthält absichtlich keine .btn-Regeln.
+   Sämtliche Buttons werden ausschließlich in buttons.css gestaltet.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Hintergrundfarben
+   ========================================================================== */
+
+.bg-primary {
+    color: #eee3cd !important;
+    background: linear-gradient(180deg, #55666b, #37474b) !important;
+}
+
+.bg-secondary {
+    color: #e0d7c4 !important;
+    background: linear-gradient(180deg, #555950, #34372f) !important;
+}
+
+.bg-success {
+    color: #e5eadf !important;
+    background: linear-gradient(180deg, #66795a, #46543f) !important;
+}
+
+.bg-warning {
+    color: #281706 !important;
+    background: linear-gradient(180deg, #d2a04d, #9b6826) !important;
+}
+
+.bg-danger {
+    color: #efd7cf !important;
+    background: linear-gradient(180deg, #8b3932, #571e1b) !important;
+}
+
+.bg-info {
+    color: #e1e7e4 !important;
+    background: linear-gradient(180deg, #5e7372, #40504f) !important;
+}
+
+.bg-light {
+    color: var(--james-ink) !important;
+    background: linear-gradient(180deg, #dfd2aa, #c8b88d) !important;
+}
+
+.bg-dark {
+    color: #eadfc8 !important;
+    background: linear-gradient(180deg, #31342e, #1d201b) !important;
+}
+
+.bg-white {
+    color: var(--james-ink) !important;
+    background-color: var(--james-paper) !important;
+}
+
+
+/* ==========================================================================
+   Textfarben
+   ========================================================================== */
+
+.text-primary { color: #7f9ca2 !important; }
+.text-secondary { color: #aaa18e !important; }
+.text-success { color: #8fa281 !important; }
+.text-warning { color: #c79845 !important; }
+.text-danger { color: #c56a60 !important; }
+.text-info { color: #83a4a3 !important; }
+.text-light { color: #eee4d0 !important; }
+.text-dark { color: #302719 !important; }
+.text-muted { color: var(--james-text-muted) !important; }
+
+
+/* ==========================================================================
+   Rahmenfarben
+   ========================================================================== */
+
+.border-primary { border-color: #566c72 !important; }
+.border-secondary { border-color: #555950 !important; }
+.border-success { border-color: #5a6e50 !important; }
+.border-warning { border-color: #a8752d !important; }
+.border-danger { border-color: var(--james-danger) !important; }
+.border-info { border-color: #526868 !important; }
+.border-light { border-color: #c7b68b !important; }
+.border-dark { border-color: #161814 !important; }
+
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+
+.badge {
+    border: 1px solid rgba(26, 19, 10, 0.65);
+    border-radius: 2px;
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.text-bg-primary {
+    color: #eee3cd !important;
+    background: linear-gradient(180deg, #55666b, #37474b) !important;
+}
+
+.text-bg-secondary {
+    color: #e4dbc8 !important;
+    background: linear-gradient(180deg, #555950, #34372f) !important;
+}
+
+.text-bg-success {
+    color: #e5eadf !important;
+    background: linear-gradient(180deg, #66795a, #46543f) !important;
+}
+
+.text-bg-warning {
+    color: #281706 !important;
+    background: linear-gradient(180deg, #d2a04d, #9b6826) !important;
+}
+
+.text-bg-danger {
+    color: #efd7cf !important;
+    background: linear-gradient(180deg, #8b3932, #571e1b) !important;
+}
+
+.text-bg-info {
+    color: #e1e7e4 !important;
+    background: linear-gradient(180deg, #5e7372, #40504f) !important;
+}
+
+.text-bg-light {
+    color: var(--james-ink) !important;
+    background: linear-gradient(180deg, #dfd2aa, #c8b88d) !important;
+}
+
+.text-bg-dark {
+    color: #eadfc8 !important;
+    background: linear-gradient(180deg, #31342e, #1d201b) !important;
+}
+
+
+/* ==========================================================================
+   Alerts
+   ========================================================================== */
+
+.alert-primary {
+    color: #dbe4e4;
+    background: linear-gradient(180deg, #2c3c3f, #1f2d30);
+    border-color: #4b666b;
+}
+
+.alert-secondary {
+    color: #ded6c4;
+    background: linear-gradient(180deg, #34372f, #252821);
+    border-color: #555950;
+}
+
+.alert-success {
+    color: #dce6d6;
+    background: linear-gradient(180deg, #31402d, #243022);
+    border-color: #5b714f;
+}
+
+.alert-warning {
+    color: #ead7ad;
+    background: linear-gradient(180deg, #47361e, #342815);
+    border-color: #8c682d;
+}
+
+.alert-danger {
+    color: #e8c6be;
+    background: linear-gradient(180deg, #472421, #351b19);
+    border-color: #7c342f;
+}
+
+.alert-info {
+    color: #d7e0df;
+    background: linear-gradient(180deg, #293938, #1e2c2b);
+    border-color: #526b69;
+}
+
+
+/* ==========================================================================
+   Progressbars
+   ========================================================================== */
+
+.progress {
+    background: linear-gradient(180deg, #121410, #1d201b) !important;
+    border: 1px solid #090a08;
+    border-radius: 2px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.68);
+}
+
+.progress-bar {
+    color: #211506;
+    background:
+        linear-gradient(
+            90deg,
+            var(--james-brass-dark),
+            var(--james-brass),
+            var(--james-brass-light)
+        ) !important;
+
+    font-weight: 800;
+    text-shadow: 0 1px 0 rgba(255, 243, 193, 0.35);
+}
+
+
+/* ==========================================================================
+   Tabellen
+   ========================================================================== */
+
+.table {
+    color: var(--james-text);
+    border-color: #4b4d44;
+}
+
+.table > :not(caption) > * > * {
+    color: inherit;
+    background-color: transparent;
+    border-bottom-color: #4b4d44;
+}
+
+.table-light {
+    color: var(--james-ink);
+    background: linear-gradient(180deg, #dfd2aa, #c8b88d) !important;
+}
+
+.table-dark {
+    color: var(--james-text);
+    background: linear-gradient(180deg, #31342e, #1d201b) !important;
+}
+
+
+/* ==========================================================================
+   Listen
+   ========================================================================== */
+
+.list-group-item {
+    color: var(--james-text);
+    background: linear-gradient(180deg, #2f322c, #232620);
+    border-color: #484a41;
+}
+
+.list-group-item.active {
+    color: #211506;
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+    border-color: #2a1907;
+}
+
+
+/* ==========================================================================
+   Dropdowns
+   ========================================================================== */
+
+.dropdown-menu {
+    color: var(--james-text);
+    background: linear-gradient(180deg, #30342d, #20231e);
+    border: 2px solid #0b0c0a;
+    outline: 1px solid #56584d;
+    outline-offset: -4px;
+    border-radius: 2px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+
+.dropdown-item {
+    color: var(--james-text);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    color: #211506;
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+}
+
+
+/* ==========================================================================
+   Modals
+   ========================================================================== */
+
+.modal-content {
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            160deg,
+            var(--james-iron-light),
+            var(--james-iron)
+        );
+
+    border: 3px solid var(--james-border-dark);
+    outline: 1px solid var(--james-border-metal);
+    outline-offset: -5px;
+    border-radius: 3px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: #4b4d44;
+}
+
+.modal-title {
+    color: #eadfc8;
+}
+
+
+/* ==========================================================================
+   Links
+   ========================================================================== */
+
+.link-primary,
+a {
+    color: #c6964d;
+}
+
+.link-primary:hover,
+a:hover {
+    color: #dfb66f;
+}

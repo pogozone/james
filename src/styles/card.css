@@ -145,10 +145,20 @@
 
 .card p,
 .card li,
-.card span {
+.card .card-text {
 
     color: #3d392f;
     line-height: 1.45;
+}
+
+
+/* Badges behalten ihre expliziten Textfarben */
+
+.card .badge.text-white,
+.card .badge.text-white span,
+.card .badge.text-white svg {
+
+    color: #ffffff !important;
 }
 
 

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Todo } from '../types';
 import { parseDateOnly } from '../utils/dateOnly';
 import { Calendar, RotateCcw } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 interface DoneListProps {
   todos: Todo[];
@@ -28,19 +29,15 @@ export function DoneList({ todos, onMoveToBacklog }: DoneListProps) {
     });
   };
 
-  if (doneTodos.length === 0) {
-    return (
-      <div className="text-center py-5">
-        <h3 className="h5 fw-semibold text-muted mb-2">Keine erledigten Aufgaben</h3>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <h2 className="h2 mb-4">Done</h2>
+    <div className="done-page">
+      <PageHeader title="Done" />
 
-      {doneTodos.map(todo => (
+      {doneTodos.length === 0 ? (
+        <div className="text-center py-5">
+          <h3 className="h5 fw-semibold text-muted mb-2">Keine erledigten Aufgaben</h3>
+        </div>
+      ) : doneTodos.map(todo => (
         <div key={todo.id} className="card shadow-sm mb-3">
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-start">

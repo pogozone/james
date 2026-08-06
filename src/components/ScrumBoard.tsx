@@ -11,6 +11,7 @@ import {
 } from '@hello-pangea/dnd';
 import { ScrumStatus, Sprint, Todo } from '../types';
 import { isBeforeTodayDateOnly, isDueTodayDateOnly } from '../utils/dateOnly';
+import { PageHeader } from './PageHeader';
 
 const STATUSES: { key: ScrumStatus; title: string }[] = [
   { key: 'Ready', title: 'Ready' },
@@ -84,15 +85,14 @@ export function ScrumBoard({ todos, currentSprint, onScrumStatusChange }: ScrumB
 
   return (
     <div>
-      {currentSprint ? (
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4 className="h5 mb-0">
-            Sprint {currentSprint.number} · {currentSprint.startDate} – {currentSprint.endDate}
-          </h4>
-        </div>
-      ) : (
-        <div className="alert alert-info mb-3">Kein aktueller Sprint vorhanden.</div>
-      )}
+      <PageHeader
+        title="Scrumboard"
+        subtitle={
+          currentSprint
+            ? `Sprint ${currentSprint.number} · ${currentSprint.startDate} – ${currentSprint.endDate}`
+            : 'Kein aktueller Sprint vorhanden.'
+        }
+      />
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="row g-3">
           {STATUSES.map(col => (
