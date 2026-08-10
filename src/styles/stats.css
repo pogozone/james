@@ -1,0 +1,423 @@
+/* ==========================================================================
+   james.iw/src/styles/stats.css
+   James – Auswertung als Werkstatt-Protokollbuch
+
+   Verwendet die Struktur aus:
+   james.iw/src/components/SprintStats.tsx
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Eisen-Panels (Gesamt & Diagramm)
+   ========================================================================== */
+
+.stats-page > .stats-panel {
+    position: relative;
+
+    margin-bottom: 0.9rem !important;
+
+    color: var(--james-text);
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 8px
+        ),
+        linear-gradient(
+            160deg,
+            var(--james-iron-light),
+            var(--james-iron) 72%
+        );
+
+    border: 3px solid var(--james-border-dark);
+    outline: 1px solid var(--james-border-metal);
+    outline-offset: -5px;
+    border-radius: 3px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        inset 7px 0 14px rgba(0, 0, 0, 0.14),
+        inset -7px 0 14px rgba(0, 0, 0, 0.14),
+        0 8px 20px rgba(0, 0, 0, 0.44);
+}
+
+.stats-page > .stats-panel
+> .stats-panel-body {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+
+    padding: 1rem;
+}
+
+.stats-page > .stats-panel
+> .stats-panel-body--chart {
+    display: block;
+}
+
+.stats-page > .stats-panel
+.stats-panel-title {
+    color: #ddcfb1;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.stats-page > .stats-panel
+.d-flex.align-items-center.gap-2 {
+    color: var(--james-text-muted);
+
+    font-family: var(--james-font-ui);
+    font-weight: 700;
+}
+
+.stats-page > .stats-panel
+.d-flex.align-items-center.gap-2
+svg {
+    color: var(--james-brass-light);
+}
+
+
+/* ==========================================================================
+   Balkendiagramm
+   ========================================================================== */
+
+.stats-page
+.stats-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+
+    height: 180px;
+
+    padding: 0.6rem 0.6rem 0;
+
+    background:
+        repeating-linear-gradient(
+            to top,
+            transparent 0,
+            transparent 2.2rem,
+            rgba(131, 153, 158, 0.14) 2.2rem,
+            rgba(131, 153, 158, 0.14) calc(2.2rem + 1px)
+        ),
+        rgba(0, 0, 0, 0.22);
+
+    border: 2px solid #090a08;
+    outline: 1px solid #56584e;
+    outline-offset: -4px;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.7);
+}
+
+.stats-page
+.stats-chart-bar-wrapper {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+
+    height: 100%;
+}
+
+.stats-page
+.stats-chart-value {
+    margin-bottom: 2px;
+
+    color: #f0dfb9;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.75rem;
+    font-weight: 800;
+
+    text-shadow: 0 1px 0 #000;
+}
+
+.stats-page
+.stats-chart-bar {
+    width: 100%;
+    max-width: 48px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass) 55%,
+            var(--james-brass-dark)
+        );
+
+    border: 1px solid #39240c;
+    border-bottom: none;
+    border-radius: 3px 3px 0 0;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 244, 194, 0.42),
+        inset -3px 0 5px rgba(0, 0, 0, 0.3);
+
+    transition: height 0.2s;
+}
+
+.stats-page
+.stats-chart-label {
+    margin-top: 4px;
+
+    color: var(--james-text-muted);
+
+    font-family: var(--james-font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+
+/* ==========================================================================
+   Sprint-Karten (Pergament)
+   ========================================================================== */
+
+.stats-page > .card.shadow-sm.mb-3 {
+    position: relative;
+
+    margin-bottom: 0.9rem !important;
+
+    color: var(--james-ink);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(87, 63, 28, 0.08),
+            transparent 28%
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1.5rem,
+            rgba(71, 95, 105, 0.11) 1.5rem,
+            rgba(71, 95, 105, 0.11) calc(1.5rem + 1px)
+        ),
+        linear-gradient(
+            180deg,
+            #ddd0a7,
+            #c6b587
+        ) !important;
+
+    border: 1px solid #74603b;
+    border-left: 6px solid var(--james-brass);
+    outline: 1px solid rgba(255, 245, 204, 0.24);
+    outline-offset: -4px;
+    border-radius: 1px;
+
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.23),
+        0 3px 4px rgba(0, 0, 0, 0.33),
+        0 8px 14px rgba(0, 0, 0, 0.21);
+
+    transition: none;
+}
+
+
+/* card.css-Dekoration anpassen */
+
+.stats-page > .card.shadow-sm.mb-3::before {
+    content: "";
+
+    position: absolute;
+    z-index: 2;
+
+    top: 10px;
+    left: 12px;
+    right: auto;
+
+    width: 30px;
+    height: 8px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--james-brass-light),
+            var(--james-brass-dark)
+        );
+
+    border: 1px solid #39240c;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 244, 194, 0.42),
+        0 1px 2px rgba(0, 0, 0, 0.42);
+
+    pointer-events: none;
+}
+
+.stats-page > .card.shadow-sm.mb-3::after {
+    content: none !important;
+}
+
+.stats-page > .card.shadow-sm.mb-3
+> .card-body {
+    padding-top: 1.7rem;
+}
+
+
+/* Sprint-Titel und Metadaten */
+
+.stats-page > .card.shadow-sm.mb-3
+.card-title {
+    color: #2d2315;
+
+    font-family: var(--james-font-ui);
+    font-weight: 900;
+    letter-spacing: 0.015em;
+
+    text-shadow: none;
+}
+
+.stats-page > .card.shadow-sm.mb-3
+.text-muted {
+    color: #665d49 !important;
+}
+
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+
+.stats-page > .card.shadow-sm.mb-3
+.badge {
+    font-family: var(--james-font-ui);
+    font-weight: 800;
+
+    border: 1px solid #0d0803;
+    border-radius: 2px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.stats-page > .card.shadow-sm.mb-3
+.badge.text-bg-success {
+    color: #e1eadb !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #4d6045,
+            #34412f
+        ) !important;
+
+    border-color: #243020;
+}
+
+.stats-page > .card.shadow-sm.mb-3
+.badge.text-bg-danger {
+    color: #f3d9d3 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #6e2a24,
+            #4a1713
+        ) !important;
+
+    border-color: #2c0d0a;
+}
+
+.stats-page > .card.shadow-sm.mb-3
+.badge.text-bg-dark {
+    color: #f0dfb9 !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #3b2b17,
+            #1e150b
+        ) !important;
+}
+
+
+/* ==========================================================================
+   Aufgabenliste
+   ========================================================================== */
+
+.stats-page
+.stats-task-heading {
+    margin-bottom: 0.35rem;
+
+    color: #665d49;
+
+    font-family: var(--james-font-ui);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.stats-page
+.stats-task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    padding: 0.55rem 0.7rem;
+
+    background:
+        rgba(83, 62, 29, 0.07);
+
+    border-left: 3px solid rgba(167, 122, 52, 0.55);
+}
+
+.stats-page
+.stats-task-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+
+    padding: 0.15rem 0;
+
+    color: #403722;
+
+    font-size: 0.875rem;
+}
+
+.stats-page
+.stats-task-title {
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stats-page
+.stats-task-row
+.badge.text-bg-dark {
+    flex: 0 0 auto;
+}
+
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .stats-page > .stats-panel
+    > .stats-panel-body {
+        gap: 0.75rem;
+    }
+
+    .stats-page > .card.shadow-sm.mb-3
+    .d-flex.justify-content-between.align-items-start {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}

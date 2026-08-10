@@ -9,12 +9,13 @@ import { TodoCalendar } from './components/TodoCalendar';
 import { ScrumBoard } from './components/ScrumBoard';
 import { DoneList } from './components/DoneList';
 import { EpicList } from './components/EpicList';
-import { Plus, Download, Calendar as CalendarIcon, Columns, CheckCircle, Layers } from 'lucide-react';
+import { SprintStats } from './components/SprintStats';
+import { Plus, Download, Calendar as CalendarIcon, Columns, CheckCircle, Layers, BarChart3 } from 'lucide-react';
 import './App.css';
 
 
 type View = 'list' | 'form' | 'detail';
-type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic';
+type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic' | 'stats';
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -465,6 +466,13 @@ function App() {
                   >
                     <Layers className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => handleViewModeChange('stats')}
+                    className={`btn ${viewMode === 'stats' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    title="Auswertung"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
@@ -479,7 +487,7 @@ function App() {
                     <span>Sprint beenden</span>
                   </button>
                 )}
-                {viewMode !== 'board' && (
+                {viewMode !== 'board' && viewMode !== 'stats' && (
                   <>
                     <button
                       onClick={handleExportJson}
@@ -541,6 +549,10 @@ function App() {
           )}
 
           {currentView === 'list' && viewMode === 'epic' && <EpicList todos={todos} />}
+
+          {currentView === 'list' && viewMode === 'stats' && (
+            <SprintStats todos={todos} sprints={allSprints} />
+          )}
 
           {currentView === 'form' && (
             <TodoForm

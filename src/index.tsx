@@ -11,6 +11,7 @@ import './styles/task-card.css';
 import './styles/backlog.css';
 import './styles/done.css';
 import './styles/epics.css';
+import './styles/stats.css';
 import './styles/calendar.css';
 import './styles/todo-form.css';
 import './styles/todo-detail.css';

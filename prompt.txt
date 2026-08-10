@@ -288,10 +288,8 @@ Updates:
 - Aufgaben in "Current Sprint" und "Next Sprint" haben einen Button "Move to Backlog" um die Aufgabe wieder in den Backlog zu verschieben
 - Aufgaben, die beim Anlegen ein Datum in der Zukunft haben, sollen automatisch in das "Backlog" verschoben werden
 
-
-ToDos:
+CalendarFeature:
 - Klickt man auf dem Scrumboard eine Aufgabe an, öffnet sich die Detailansicht
-
 - Die erledigten Aufgaben sollen unter Done einen Button für die Detailansicht haben
 - In der Kalenderansicht können Aufgaben per Drag & Drop auf ein anderes Datum verschoben werden:
     - Die Aufgabe wird dann automatisch dem entsprechenden Sprint zugeordnet
@@ -299,9 +297,20 @@ ToDos:
     - Einfacher Klick auf eine Aufgabe öffnet die Detailansicht
     - Klicken und Halten auf eine Aufgabe ermöglicht das Verschieben
 - Die Felder im Epic-Formular sollen untereinander angezeigt werden (Name, Beschreibung)
-Auswertung:
+
+Statistics:
 - Es gibt einen Reiter "Auswertung", der eine Übersicht vergangener Sprints zeigt
-- In der Auswertung steht, wie viele Punkte & Aufgaben im Sprint erledigt wurden
+- In der Auswertung steht.
+  - wie viele Punkte & Aufgaben im Sprint erledigt wurden
+  - wie viele Punkte & Aufgaben im Sprint nicht erledigt wurden
+  - die durchschnittliche Anzahl an Punkten pro Sprint
+- Es gibt eine grafische Darstellung der Anzahl an Punkten der letzten 10 Sprints
+- Bei jedem Sprint werden die erledigten Aufgaben mit ihren Punkten aufgelistet
+- Bei jedem Sprint werden die unerledigten Aufgaben mit ihren Punkten aufgelistet
+
+ToDos:
+
+Auswertung:
 
 
 - Ready
