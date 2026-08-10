@@ -290,6 +290,8 @@ Updates:
 
 
 ToDos:
+- Klickt man auf dem Scrumboard eine Aufgabe an, öffnet sich die Detailansicht
+
 - Die erledigten Aufgaben sollen unter Done einen Button für die Detailansicht haben
 - In der Kalenderansicht können Aufgaben per Drag & Drop auf ein anderes Datum verschoben werden:
     - Die Aufgabe wird dann automatisch dem entsprechenden Sprint zugeordnet
@@ -299,7 +301,7 @@ ToDos:
 - Die Felder im Epic-Formular sollen untereinander angezeigt werden (Name, Beschreibung)
 Auswertung:
 - Es gibt einen Reiter "Auswertung", der eine Übersicht vergangener Sprints zeigt
-- In der Auswertung steht, wie viele Punkte im Sprint erledigt wurden
+- In der Auswertung steht, wie viele Punkte & Aufgaben im Sprint erledigt wurden
 
 
 - Ready
