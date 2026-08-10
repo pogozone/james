@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
 import { Todo } from '../types';
 import { parseDateOnly } from '../utils/dateOnly';
-import { Calendar, RotateCcw } from 'lucide-react';
+import { Calendar, Eye, RotateCcw } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 
 interface DoneListProps {
   todos: Todo[];
   onMoveToBacklog: (todo: Todo) => void;
+  onView: (todo: Todo) => void;
 }
 
-export function DoneList({ todos, onMoveToBacklog }: DoneListProps) {
+export function DoneList({ todos, onMoveToBacklog, onView }: DoneListProps) {
   const doneTodos = useMemo(() => {
     const filtered = todos.filter(t => t.status === 'Erledigt' || t.status === 'Unerledigt geschlossen');
     filtered.sort((a, b) => {
@@ -57,7 +58,15 @@ export function DoneList({ todos, onMoveToBacklog }: DoneListProps) {
                 </div>
               </div>
 
-              <div className="ms-3">
+              <div className="ms-3 d-flex flex-column gap-2">
+                <button
+                  className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
+                  onClick={() => onView(todo)}
+                  title="Detailansicht öffnen"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Details</span>
+                </button>
                 <button
                   className="btn btn-outline-primary btn-sm d-flex align-items-center gap-2"
                   onClick={() => onMoveToBacklog(todo)}

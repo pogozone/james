@@ -49,9 +49,10 @@ interface ScrumBoardProps {
   todos: Todo[];
   currentSprint: Sprint | null;
   onScrumStatusChange: (todo: Todo, scrumStatus: ScrumStatus) => void;
+  onView: (todo: Todo) => void;
 }
 
-export function ScrumBoard({ todos, currentSprint, onScrumStatusChange }: ScrumBoardProps) {
+export function ScrumBoard({ todos, currentSprint, onScrumStatusChange, onView }: ScrumBoardProps) {
   const [loading] = useState(false);
 
   const currentSprintTodos = useMemo(
@@ -132,7 +133,12 @@ export function ScrumBoard({ todos, currentSprint, onScrumStatusChange }: ScrumB
                                       : undefined
                               }}
                             >
-                              <div className="card-body py-2 px-3">
+                              <div
+                                className="card-body py-2 px-3"
+                                onClick={() => onView(item)}
+                                style={{ cursor: 'pointer' }}
+                                title="Detailansicht öffnen"
+                              >
                                 <div className="d-flex justify-content-between align-items-start gap-2">
                                   <div style={{ minWidth: 0 }}>
                                     <div

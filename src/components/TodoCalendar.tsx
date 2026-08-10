@@ -8,10 +8,65 @@ interface TodoCalendarProps {
   onView: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onStatusChange: (todo: Todo, newStatus: Todo['status']) => void;
+  onDateChange: (todo: Todo, newDate: string) => void;
 }
 
-export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdit, onStatusChange }) => {
+export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdit, onStatusChange, onDateChange }) => {
   const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [dragOverDate, setDragOverDate] = React.useState<string | null>(null);
+  const didDragRef = React.useRef(false);
+  const pressPosRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const toDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleDragStart = (e: React.DragEvent, todo: Todo) => {
+    didDragRef.current = true;
+    e.dataTransfer.setData('text/plain', todo.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDragOverDate(null);
+    // Browsers may still fire a click after dragend; reset the flag afterwards.
+    window.setTimeout(() => {
+      didDragRef.current = false;
+    }, 0);
+  };
+
+  const handleDayDragOver = (e: React.DragEvent, dateString: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverDate !== dateString) setDragOverDate(dateString);
+  };
+
+  const handleDayDrop = (e: React.DragEvent, dateString: string) => {
+    e.preventDefault();
+    const todoId = e.dataTransfer.getData('text/plain');
+    const todo = todos.find(t => t.id === todoId);
+    if (todo && todo.dueDate !== dateString) {
+      onDateChange(todo, dateString);
+    }
+    setDragOverDate(null);
+  };
+
+  const handleItemMouseDown = (e: React.MouseEvent) => {
+    pressPosRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleItemMouseUp = (e: React.MouseEvent, todo: Todo) => {
+    const start = pressPosRef.current;
+    pressPosRef.current = null;
+    if (!start || didDragRef.current) return;
+    const moved = Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y);
+    if (moved < 5) {
+      onView(todo);
+    }
+  };
   
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -26,11 +81,8 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
   
   const getTodosForDate = (date: Date) => {
     // Use local date format to avoid timezone issues
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    
+    const dateString = toDateString(date);
+
     const filteredTodos = todos.filter(todo => 
       todo.dueDate === dateString && 
       (todo.status === 'Neu' || todo.status === 'In Bearbeitung')
@@ -105,13 +157,17 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dayTodos = getTodosForDate(date);
+      const dateString = toDateString(date);
       const isToday = date.toDateString() === new Date().toDateString();
       const isOverdue = date < new Date() && date.toDateString() !== new Date().toDateString();
-      
+
       days.push(
         <div
           key={day}
-          className={`calendar-day ${isToday ? 'today' : ''} ${isOverdue ? 'overdue' : ''}`}
+          className={`calendar-day ${isToday ? 'today' : ''} ${isOverdue ? 'overdue' : ''} ${dragOverDate === dateString ? 'drag-over' : ''}`}
+          onDragOver={(e) => handleDayDragOver(e, dateString)}
+          onDragLeave={() => { if (dragOverDate === dateString) setDragOverDate(null); }}
+          onDrop={(e) => handleDayDrop(e, dateString)}
         >
           <div className="calendar-day-header">
             <span className="calendar-day-number">{day}</span>
@@ -124,7 +180,11 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
               <div
                 key={todo.id}
                 className={`calendar-todo-item ${todo.priority === 'Super wichtig' ? getPriorityColor(todo.priority) : getStatusColor(todo.status)} ${todo.priority === 'Super wichtig' ? 'super-important-calendar' : ''}`}
-                onClick={() => onView(todo)}
+                draggable
+                onDragStart={(e) => handleDragStart(e, todo)}
+                onDragEnd={handleDragEnd}
+                onMouseDown={handleItemMouseDown}
+                onMouseUp={(e) => handleItemMouseUp(e, todo)}
                 title={todo.title}
               >
                 <span className="calendar-todo-title">{todo.title}</span>
@@ -279,6 +339,12 @@ export const TodoCalendar: React.FC<TodoCalendarProps> = ({ todos, onView, onEdi
         
         .calendar-todo-item:hover {
           opacity: 0.8;
+        }
+
+        .calendar-day.drag-over {
+          background: #d1e7dd;
+          outline: 2px dashed #0d6efd;
+          outline-offset: -2px;
         }
         
         .calendar-more-todos {

@@ -146,8 +146,8 @@ export function EpicList({ todos }: EpicListProps) {
 
       <div className="card mb-3">
         <div className="card-body d-flex flex-column">
-          <div className="d-flex flex-column flex-md-row align-items-start gap-2">
-            <div style={{ width: 400, maxWidth: '100%', flex: '0 0 auto' }}>
+          <div className="d-flex flex-column align-items-stretch gap-2">
+            <div>
               <label className="form-label">Titel</label>
               <input
                 className="form-control"
@@ -155,7 +155,7 @@ export function EpicList({ todos }: EpicListProps) {
                 onChange={e => setTitle(e.target.value)}
               />
             </div>
-            <div style={{ width: 800, maxWidth: '100%', flex: '0 0 auto' }}>
+            <div>
               <label className="form-label">Beschreibung (optional)</label>
               <textarea
                 className="form-control"
@@ -184,10 +184,10 @@ export function EpicList({ todos }: EpicListProps) {
           <div key={epic.id} className="card shadow-sm mb-3">
             <div className="card-body d-flex flex-column">
               <div className="d-flex justify-content-between align-items-start gap-3">
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   {editingEpicId === epic.id ? (
-                    <div className="d-flex flex-column flex-md-row align-items-start gap-2">
-                      <div style={{ width: 400, maxWidth: '100%', flex: '0 0 auto' }}>
+                    <div className="d-flex flex-column align-items-stretch gap-2">
+                      <div>
                         <label className="form-label small text-muted">Titel</label>
                         <input
                           className="form-control"
@@ -198,7 +198,7 @@ export function EpicList({ todos }: EpicListProps) {
                           }}
                         />
                       </div>
-                      <div style={{ width: 800, maxWidth: '100%', flex: '0 0 auto' }}>
+                      <div>
                         <label className="form-label small text-muted">Beschreibung</label>
                         <textarea
                           className="form-control"

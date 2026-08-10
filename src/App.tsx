@@ -20,6 +20,7 @@ function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [currentSprint, setCurrentSprint] = useState<Sprint | null>(null);
   const [nextSprint, setNextSprint] = useState<Sprint | null>(null);
+  const [allSprints, setAllSprints] = useState<Sprint[]>([]);
   const [currentView, setCurrentView] = useState<View>('list');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
@@ -43,6 +44,7 @@ function App() {
   const loadSprints = async () => {
     try {
       const all = await sprintService.getSprints().catch(() => []);
+      setAllSprints(all);
       setCurrentSprint(all.find(s => s.status === 'current') || null);
       setNextSprint(all.find(s => s.status === 'next') || null);
     } catch (error) {
@@ -201,6 +203,37 @@ function App() {
       if (prevTodo) replaceTodoInState(prevTodo);
       alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
     }
+  };
+
+  const getSprintForDate = (date: string): Sprint | null => {
+    return allSprints.find(s => s.startDate <= date && s.endDate >= date) || null;
+  };
+
+  const handleTodoDateChange = (todo: Todo, newDate: string) => {
+    const sprint = getSprintForDate(newDate);
+    const sprintId = sprint ? sprint.id : null;
+    const sprintBucket: SprintBucket = sprint
+      ? (sprint.status === 'current' ? 'current' : sprint.status === 'next' ? 'next' : todo.sprintBucket || 'none')
+      : 'none';
+
+    const updatedTodo: Todo = { ...todo, dueDate: newDate, sprintId, sprintBucket };
+
+    const prevTodo = todos.find(t => t.id === todo.id);
+    const mutationVersion = beginTodoMutation(todo.id);
+    replaceTodoInState(updatedTodo);
+    todoService.updateTodo(todo.id, {
+      dueDate: newDate,
+      sprintId,
+      sprintBucket
+    }).then(saved => {
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+      replaceTodoInState(saved);
+    }).catch(error => {
+      console.error('Save failed:', error);
+      if (!isLatestTodoMutation(todo.id, mutationVersion)) return;
+      if (prevTodo) replaceTodoInState(prevTodo);
+      alert('Speichern fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
+    });
   };
 
   const getSprintIdForBucket = (sprintBucket: SprintBucket): string | null => {
@@ -490,6 +523,7 @@ function App() {
               onView={handleViewTodo}
               onEdit={handleEditTodo}
               onStatusChange={handleStatusChange}
+              onDateChange={handleTodoDateChange}
             />
           )}
 
@@ -498,11 +532,12 @@ function App() {
               todos={todos}
               currentSprint={currentSprint}
               onScrumStatusChange={handleScrumStatusChange}
+              onView={handleViewTodo}
             />
           )}
 
           {currentView === 'list' && viewMode === 'done' && (
-            <DoneList todos={todos} onMoveToBacklog={handleMoveDoneToBacklog} />
+            <DoneList todos={todos} onMoveToBacklog={handleMoveDoneToBacklog} onView={handleViewTodo} />
           )}
 
           {currentView === 'list' && viewMode === 'epic' && <EpicList todos={todos} />}
