@@ -24,3 +24,14 @@ yarn-error.log*
 
 # todo data
 public/todo.json
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Database backups
+backups/
+scripts/backups/
+*.archive
+*.archive.gz
