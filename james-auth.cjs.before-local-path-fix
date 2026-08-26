@@ -1,19 +1,9 @@
 /**
- * SeaSpider OIDC integration for James' CommonJS Express server.
- *
- * Contract:
- * - Express always sees /auth/login, /auth/callback, /auth/logout.
- * - The browser-facing base path is derived from SEASPIDER_REDIRECT_URI.
- *   Local:      http://james.emaz.local/auth/callback        -> ""
- *   Production: https://www.christian-woldt.de/james/auth/callback -> "/james"
- * - OIDC public issuer and Docker transport are separate:
- *   SEASPIDER_ISSUER       = public browser issuer
- *   SEASPIDER_INTERNAL_URL = internal Docker origin
+ * SeaSpider integration for James' CommonJS Express server.
  */
 
 const session = require('express-session');
 const connectMongo = require('connect-mongo');
-
 const MongoStore = connectMongo.MongoStore || connectMongo.default || connectMongo;
 
 let oidc;
@@ -25,84 +15,69 @@ function required(name) {
   return value;
 }
 
-function redirectUri() {
-  return new URL(required('SEASPIDER_REDIRECT_URI'));
-}
+function seaSpiderInternalOrigin(issuer) {
+  const configured = process.env.SEASPIDER_INTERNAL_URL?.trim();
 
-function externalBasePath() {
-  const pathname = redirectUri().pathname;
-  const suffix = '/auth/callback';
-
-  if (!pathname.endsWith(suffix)) {
-    throw new Error(
-      `SEASPIDER_REDIRECT_URI must end with ${suffix}: ${pathname}`,
-    );
+  if (configured) {
+    return new URL(configured);
   }
 
-  const prefix = pathname.slice(0, -suffix.length).replace(/\/$/, '');
-  return prefix === '/' ? '' : prefix;
-}
+  // Local Platform convention: the browser uses *.emaz.local while
+  // container-to-container traffic uses the Docker service name.
+  if (issuer.hostname.endsWith('.emaz.local')) {
+    return new URL('http://seaspider:3400');
+  }
 
-function browserUrl(pathname = '/') {
-  const prefix = externalBasePath();
-  const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
-
-  if (!prefix) return path;
-  if (path === '/') return `${prefix}/`;
-  return `${prefix}${path}`;
-}
-
-function internalOrigin() {
-  const value = process.env.SEASPIDER_INTERNAL_URL?.trim();
-  return value ? new URL(value) : null;
+  return null;
 }
 
 function createSeaSpiderFetch(issuer) {
-  const internal = internalOrigin();
+  const internal = seaSpiderInternalOrigin(issuer);
   if (!internal) return undefined;
 
-  if (internal.pathname !== '/' && internal.pathname !== '') {
-    throw new Error('SEASPIDER_INTERNAL_URL must be an origin without a path');
-  }
-
   return async (input, init = {}) => {
-    const source = input instanceof Request
-      ? input.url
-      : (input instanceof URL ? input.href : String(input));
-    const requested = new URL(source);
+    const original = new URL(
+      input instanceof URL
+        ? input.href
+        : (typeof input === 'string' ? input : input.url),
+    );
 
-    if (requested.origin !== issuer.origin) {
+    // Only reroute requests that belong to the configured SeaSpider issuer.
+    if (original.origin !== issuer.origin) {
       return globalThis.fetch(input, init);
     }
 
-    const target = new URL(requested.href);
+    const target = new URL(original.href);
     target.protocol = internal.protocol;
     target.username = internal.username;
     target.password = internal.password;
     target.host = internal.host;
 
-    const headers = new Headers(input instanceof Request ? input.headers : undefined);
-    if (init.headers) {
-      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    const forwardedHeaders = new Headers(
+      input instanceof Request ? input.headers : undefined,
+    );
+
+    for (const [name, value] of new Headers(init.headers || {})) {
+      forwardedHeaders.set(name, value);
     }
 
-    // SeaSpider derives its public issuer from these headers. The TCP
-    // connection remains inside Docker, while discovery and redirects expose
-    // only the configured public issuer.
-    headers.set('x-forwarded-host', issuer.host);
-    headers.set('x-forwarded-proto', issuer.protocol.replace(':', ''));
+    // SeaSpider derives its public issuer dynamically from these headers.
+    // The TCP connection goes to the Docker service, but generated OIDC
+    // metadata and browser redirects keep using the public issuer.
+    forwardedHeaders.set('x-forwarded-host', issuer.host);
+    forwardedHeaders.set('x-forwarded-proto', issuer.protocol.replace(':', ''));
 
     if (input instanceof Request) {
       const rewritten = new Request(target, input);
       return globalThis.fetch(new Request(rewritten, {
         ...init,
-        headers,
+        headers: forwardedHeaders,
       }));
     }
 
     return globalThis.fetch(target, {
       ...init,
-      headers,
+      headers: forwardedHeaders,
     });
   };
 }
@@ -112,15 +87,18 @@ async function client() {
 
   const issuer = new URL(required('SEASPIDER_ISSUER'));
   const clientSecret = required('SEASPIDER_CLIENT_SECRET');
-  const options = {};
   const customFetch = createSeaSpiderFetch(issuer);
 
+  const discoveryOptions = {};
+
+  // openid-client v6 exposes customFetch as a symbol-keyed option.
+  // The same fetch implementation is retained for token/JWKS requests.
   if (customFetch) {
-    options[oidc.customFetch] = customFetch;
+    discoveryOptions[oidc.customFetch] = customFetch;
   }
 
   if (issuer.protocol === 'http:') {
-    options.execute = [oidc.allowInsecureRequests];
+    discoveryOptions.execute = [oidc.allowInsecureRequests];
   }
 
   configuration ||= await oidc.discovery(
@@ -128,22 +106,26 @@ async function client() {
     required('SEASPIDER_CLIENT_ID'),
     { client_secret: clientSecret },
     oidc.ClientSecretBasic(clientSecret),
-    options,
+    discoveryOptions,
   );
 
   return { oidc, configuration };
 }
 
-function callbackUrl(req) {
-  const callback = redirectUri();
+function externalCallbackUrl(req) {
+  const callback = new URL(required('SEASPIDER_REDIRECT_URI'));
   const incoming = new URL(req.originalUrl, 'http://internal.invalid');
   callback.search = incoming.search;
   return callback;
 }
 
-function installSeaSpider(app, { mongoUrl } = {}) {
-  const sessionSecret = required('JAMES_SESSION_SECRET');
-  const callback = redirectUri();
+function installSeaSpider(app, {
+  mongoUrl,
+  internalBasePath = '/james-todos',
+  externalBasePath = '/james',
+} = {}) {
+  required('JAMES_SESSION_SECRET');
+  required('SEASPIDER_REDIRECT_URI');
 
   if (!mongoUrl) {
     throw new Error('installSeaSpider requires mongoUrl');
@@ -153,7 +135,7 @@ function installSeaSpider(app, { mongoUrl } = {}) {
 
   app.use(session({
     name: 'james.sid',
-    secret: sessionSecret,
+    secret: process.env.JAMES_SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     rolling: true,
@@ -164,14 +146,13 @@ function installSeaSpider(app, { mongoUrl } = {}) {
     }),
     cookie: {
       httpOnly: true,
-      secure: callback.protocol === 'https:',
+      secure: 'auto',
       sameSite: 'lax',
-      path: externalBasePath() || '/',
       maxAge: 60 * 60 * 1000,
     },
   }));
 
-  app.get('/auth/login', async (req, res, next) => {
+  app.get(`${internalBasePath}/auth/login`, async (req, res, next) => {
     try {
       const { oidc: oidcClient, configuration: oidcConfiguration } = await client();
       const verifier = oidcClient.randomPKCECodeVerifier();
@@ -182,7 +163,7 @@ function installSeaSpider(app, { mongoUrl } = {}) {
       req.session.oidc = { verifier, state, nonce };
 
       const url = oidcClient.buildAuthorizationUrl(oidcConfiguration, {
-        redirect_uri: callback.href,
+        redirect_uri: process.env.SEASPIDER_REDIRECT_URI,
         scope: 'openid profile email seaspider',
         code_challenge: challenge,
         code_challenge_method: 'S256',
@@ -190,16 +171,13 @@ function installSeaSpider(app, { mongoUrl } = {}) {
         nonce,
       });
 
-      return req.session.save((error) => {
-        if (error) return next(error);
-        return res.redirect(url.href);
-      });
+      return res.redirect(url.href);
     } catch (error) {
       return next(error);
     }
   });
 
-  app.get('/auth/callback', async (req, res, next) => {
+  app.get(`${internalBasePath}/auth/callback`, async (req, res, next) => {
     try {
       const saved = req.session.oidc;
       if (!saved) return res.status(400).send('Missing OIDC session');
@@ -207,7 +185,7 @@ function installSeaSpider(app, { mongoUrl } = {}) {
       const { oidc: oidcClient, configuration: oidcConfiguration } = await client();
       const tokens = await oidcClient.authorizationCodeGrant(
         oidcConfiguration,
-        callbackUrl(req),
+        externalCallbackUrl(req),
         {
           pkceCodeVerifier: saved.verifier,
           expectedState: saved.state,
@@ -217,18 +195,21 @@ function installSeaSpider(app, { mongoUrl } = {}) {
       );
 
       const idClaims = tokens.claims();
-      if (!idClaims?.sub || !tokens.access_token) {
+      if (!idClaims?.sub) {
         delete req.session.oidc;
         return res.status(403).send('Access denied');
       }
 
+      // In the Authorization Code Flow, claims requested through profile,
+      // email and the custom "seaspider" scope belong to UserInfo. The ID
+      // token is used to validate the authentication and obtain the stable sub.
       const userInfo = await oidcClient.fetchUserInfo(
         oidcConfiguration,
         tokens.access_token,
         idClaims.sub,
       );
 
-      if (!userInfo?.sub || !['admin', 'user'].includes(userInfo.role)) {
+      if (!['admin', 'user'].includes(userInfo.role)) {
         delete req.session.oidc;
         return res.status(403).send('Access denied');
       }
@@ -246,7 +227,7 @@ function installSeaSpider(app, { mongoUrl } = {}) {
         req.session.user = user;
         return req.session.save((saveError) => {
           if (saveError) return next(saveError);
-          return res.redirect(browserUrl('/'));
+          return res.redirect(externalBasePath || '/');
         });
       });
     } catch (error) {
@@ -254,11 +235,11 @@ function installSeaSpider(app, { mongoUrl } = {}) {
     }
   });
 
-  app.post('/auth/logout', (req, res, next) => {
+  app.post(`${internalBasePath}/auth/logout`, (req, res, next) => {
     req.session.destroy((error) => {
       if (error) return next(error);
-      res.clearCookie('james.sid', { path: externalBasePath() || '/' });
-      return res.redirect(browserUrl('/auth/login'));
+      res.clearCookie('james.sid');
+      return res.redirect(`${externalBasePath}/auth/login`);
     });
   });
 
@@ -267,14 +248,11 @@ function installSeaSpider(app, { mongoUrl } = {}) {
       return next();
     }
 
-    if (
-      req.baseUrl === '/james-todos/api'
-      || req.originalUrl.startsWith('/james-todos/api/')
-    ) {
+    if (req.originalUrl.includes('/api/')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    return res.redirect(browserUrl('/auth/login'));
+    return res.redirect(`${externalBasePath}/auth/login`);
   }
 
   return { requireSeaSpider };

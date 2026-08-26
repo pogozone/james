@@ -24,6 +24,32 @@ runtime:
   port: 3003
   healthcheck: /james-todos/api/health
 
+environment:
+  SEASPIDER_ISSUER:
+    source: SEASPIDER_ISSUER
+    scope: global
+
+  SEASPIDER_INTERNAL_URL:
+    source: SEASPIDER_INTERNAL_URL
+    scope: global
+
+  SEASPIDER_CLIENT_ID:
+    source: SEASPIDER_CLIENT_ID
+    scope: instance
+
+  SEASPIDER_CLIENT_SECRET:
+    source: SEASPIDER_CLIENT_SECRET
+    scope: instance
+
+  SEASPIDER_REDIRECT_URI:
+    source: SEASPIDER_REDIRECT_URI
+    scope: instance
+
+  JAMES_SESSION_SECRET:
+    source: SESSION_SECRET
+    scope: instance
+    generate: secret
+
 database:
   type: mongodb
   database: james

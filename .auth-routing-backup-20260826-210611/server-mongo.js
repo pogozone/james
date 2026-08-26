@@ -845,16 +845,9 @@ app.get('/james-todos/api/health', (req, res) => {
 
 const buildDirectory = path.join(__dirname, 'build');
 
-// Valid /auth routes are registered above by installSeaSpider().
-// Unknown /auth/* requests must never fall through to the React SPA.
-// Otherwise index.html would be returned for /auth/static/... and relative
-// React assets would resolve below /auth.
-app.use('/auth', (_req, res) => {
-  res.status(404).type('text/plain').send('Not Found');
-});
-
-// Protect the UI. The health endpoint and API protection were handled above.
+// SeaSpider authentication middleware
 app.use((req, res, next) => {
+  if (req.path.startsWith('/auth/')) return next();
   if (req.path === '/james-todos/api/health') return next();
   return requireSeaSpider(req, res, next);
 });
@@ -862,7 +855,7 @@ app.use((req, res, next) => {
 app.use(express.static(buildDirectory));
 
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/james-todos/api/') || req.path.startsWith('/auth/')) {
+  if (req.path.startsWith('/james-todos/api/')) {
     return next();
   }
 

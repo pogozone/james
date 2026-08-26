@@ -7,14 +7,10 @@ RUN npm ci
 
 COPY . .
 
-#
-# Diese Werte werden beim Build von der Plattform gesetzt.
-#
 ARG REACT_APP_API_BASE_URL=/james-todos/api/
 ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
 
-RUN npm run build
-
+RUN npm run build     && npm prune --omit=dev
 
 FROM node:20-bookworm-slim AS runtime
 
@@ -23,13 +19,11 @@ ENV PORT=3003
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-
-RUN npm ci --omit=dev \
-    && npm cache clean --force
-
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/build ./build
+COPY package.json package-lock.json ./
 COPY server-mongo.js ./
+COPY james-auth.cjs ./
 
 RUN chown -R node:node /app
 

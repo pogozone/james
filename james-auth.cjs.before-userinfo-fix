@@ -1,0 +1,239 @@
+/**
+ * SeaSpider OIDC integration for James.
+ *
+ * Public/front-channel issuer, e.g. local:
+ *   SEASPIDER_ISSUER=http://seaspider.emaz.local/oidc
+ *
+ * Optional Docker back-channel origin:
+ *   SEASPIDER_INTERNAL_URL=http://seaspider:3400
+ */
+
+const session = require('express-session');
+const connectMongo = require('connect-mongo');
+const MongoStore = connectMongo.MongoStore || connectMongo.default || connectMongo;
+
+let oidc;
+let configuration;
+
+function required(name) {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
+function normalizeUrl(value, name) {
+  try {
+    return new URL(value);
+  } catch {
+    throw new Error(`${name} must be a valid absolute URL`);
+  }
+}
+
+function externalBasePath() {
+  const callback = normalizeUrl(required('SEASPIDER_REDIRECT_URI'), 'SEASPIDER_REDIRECT_URI');
+  const suffix = '/auth/callback';
+  if (!callback.pathname.endsWith(suffix)) {
+    throw new Error(`SEASPIDER_REDIRECT_URI must end with ${suffix}`);
+  }
+  return callback.pathname.slice(0, -suffix.length).replace(/\/$/, '');
+}
+
+function externalPath(pathname) {
+  const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return `${externalBasePath()}${path}` || '/';
+}
+
+function externalCallbackUrl(req) {
+  const callback = normalizeUrl(required('SEASPIDER_REDIRECT_URI'), 'SEASPIDER_REDIRECT_URI');
+  const incoming = new URL(req.originalUrl, 'http://james.internal');
+  callback.search = incoming.search;
+  return callback;
+}
+
+function internalOrigin() {
+  const configured = process.env.SEASPIDER_INTERNAL_URL?.trim();
+  if (!configured) return null;
+  const url = normalizeUrl(configured, 'SEASPIDER_INTERNAL_URL');
+  return new URL(url.origin);
+}
+
+function createSeaSpiderFetch(issuer) {
+  const internal = internalOrigin();
+  if (!internal) return undefined;
+
+  return async (input, init = {}) => {
+    const requested = new URL(
+      input instanceof URL ? input.href : (typeof input === 'string' ? input : input.url),
+    );
+
+    if (requested.origin !== issuer.origin) {
+      return globalThis.fetch(input, init);
+    }
+
+    const target = new URL(requested.href);
+    target.protocol = internal.protocol;
+    target.host = internal.host;
+
+    const headers = new Headers(
+      init.headers || (input instanceof Request ? input.headers : undefined),
+    );
+    headers.set('x-forwarded-host', issuer.host);
+    headers.set('x-forwarded-proto', issuer.protocol.replace(':', ''));
+
+    if (input instanceof Request) {
+      const rewritten = new Request(target, input);
+      return globalThis.fetch(rewritten, { ...init, headers });
+    }
+
+    return globalThis.fetch(target, { ...init, headers });
+  };
+}
+
+async function client() {
+  if (configuration) return { oidc, configuration };
+
+  oidc ||= await import('openid-client');
+  const issuer = normalizeUrl(required('SEASPIDER_ISSUER'), 'SEASPIDER_ISSUER');
+  const clientId = required('SEASPIDER_CLIENT_ID');
+  const clientSecret = required('SEASPIDER_CLIENT_SECRET');
+  const customFetch = createSeaSpiderFetch(issuer);
+
+  const options = {};
+  if (customFetch) options[oidc.customFetch] = customFetch;
+  if (issuer.protocol === 'http:') options.execute = [oidc.allowInsecureRequests];
+
+  configuration = await oidc.discovery(
+    issuer,
+    clientId,
+    { client_secret: clientSecret },
+    oidc.ClientSecretBasic(clientSecret),
+    options,
+  );
+
+  return { oidc, configuration };
+}
+
+function installSeaSpider(app, { mongoUrl } = {}) {
+  const sessionSecret = required('JAMES_SESSION_SECRET');
+  required('SEASPIDER_ISSUER');
+  required('SEASPIDER_CLIENT_ID');
+  required('SEASPIDER_CLIENT_SECRET');
+  required('SEASPIDER_REDIRECT_URI');
+
+  if (!mongoUrl) throw new Error('installSeaSpider requires mongoUrl');
+
+  app.set('trust proxy', 1);
+  app.use(session({
+    name: 'james.sid',
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    store: MongoStore.create({
+      mongoUrl,
+      collectionName: 'james_sessions',
+      ttl: 60 * 60,
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: 'auto',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000,
+    },
+  }));
+
+  // Internal Express routes are always /auth/*. Apache may expose the same
+  // routes below an external prefix such as /james in production.
+  app.get('/auth/login', async (req, res, next) => {
+    try {
+      const { oidc: clientApi, configuration: clientConfiguration } = await client();
+      const verifier = clientApi.randomPKCECodeVerifier();
+      const challenge = await clientApi.calculatePKCECodeChallenge(verifier);
+      const state = clientApi.randomState();
+      const nonce = clientApi.randomNonce();
+
+      req.session.oidc = { verifier, state, nonce };
+
+      const url = clientApi.buildAuthorizationUrl(clientConfiguration, {
+        redirect_uri: required('SEASPIDER_REDIRECT_URI'),
+        scope: 'openid profile email seaspider',
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+        state,
+        nonce,
+      });
+
+      return res.redirect(url.href);
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  app.get('/auth/callback', async (req, res, next) => {
+    try {
+      const saved = req.session.oidc;
+      if (!saved) return res.status(400).send('Missing OIDC session');
+
+      const { oidc: clientApi, configuration: clientConfiguration } = await client();
+      const tokens = await clientApi.authorizationCodeGrant(
+        clientConfiguration,
+        externalCallbackUrl(req),
+        {
+          pkceCodeVerifier: saved.verifier,
+          expectedState: saved.state,
+          expectedNonce: saved.nonce,
+          idTokenExpected: true,
+        },
+      );
+
+      const claims = tokens.claims();
+      if (!claims || !['admin', 'user'].includes(claims.role)) {
+        delete req.session.oidc;
+        return res.status(403).send('Access denied');
+      }
+
+      const user = {
+        id: claims.sub,
+        username: claims.preferred_username,
+        email: claims.email,
+        role: claims.role,
+      };
+
+      return req.session.regenerate((error) => {
+        if (error) return next(error);
+        req.session.user = user;
+        return req.session.save((saveError) => {
+          if (saveError) return next(saveError);
+          return res.redirect(externalBasePath() || '/');
+        });
+      });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  app.post('/auth/logout', (req, res, next) => {
+    req.session.destroy((error) => {
+      if (error) return next(error);
+      res.clearCookie('james.sid');
+      return res.redirect(externalPath('/auth/login'));
+    });
+  });
+
+  app.get('/auth/me', (req, res) => {
+    if (!req.session.user || !['admin', 'user'].includes(req.session.user.role)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    return res.json({ user: req.session.user });
+  });
+
+  function requireSeaSpider(req, res, next) {
+    if (req.session.user && ['admin', 'user'].includes(req.session.user.role)) return next();
+    if (req.originalUrl.includes('/api/')) return res.status(401).json({ error: 'Unauthorized' });
+    return res.redirect(externalPath('/auth/login'));
+  }
+
+  return { requireSeaSpider };
+}
+
+module.exports = { installSeaSpider };
