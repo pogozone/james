@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const { installSeaSpider } = require('./james-auth.cjs');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -53,7 +54,8 @@ function sendBadRequest(res, message) {
 }
 
 // Middleware
-app.use(cors());
+// If another trusted browser origin really needs the API later, use an explicit allowlist.
+// app.use(cors());
 app.use(express.json());
 
 // Epic Schema
@@ -268,6 +270,19 @@ mongoose.connection.once('open', async () => {
   } catch (error) {
     console.error('Failed to run data migrations:', error);
   }
+});
+
+// SeaSpider authentication integration
+const { requireSeaSpider } = installSeaSpider(app, {
+  mongoUrl: MONGODB_URI,
+  internalBasePath: '/james-todos', // what Express sees
+  externalBasePath: '/james',      // what the browser sees
+});
+
+// Keep the health endpoint public, protect every other API endpoint.
+app.use('/james-todos/api', (req, res, next) => {
+  if (req.path === '/health') return next();
+  return requireSeaSpider(req, res, next);
 });
 
 // API Routes
@@ -831,6 +846,13 @@ app.get('/james-todos/api/health', (req, res) => {
 });
 
 const buildDirectory = path.join(__dirname, 'build');
+
+// SeaSpider authentication middleware
+app.use((req, res, next) => {
+  if (req.path.startsWith('/james-todos/auth/')) return next();
+  if (req.path === '/james-todos/api/health') return next();
+  return requireSeaSpider(req, res, next);
+});
 
 app.use(express.static(buildDirectory));
 
