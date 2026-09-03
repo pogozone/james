@@ -166,7 +166,7 @@ function installSeaSpider(app, { mongoUrl } = {}) {
       httpOnly: true,
       secure: callback.protocol === 'https:',
       sameSite: 'lax',
-      path: externalBasePath() || '/',
+      path: '/',
       maxAge: 60 * 60 * 1000,
     },
   }));
@@ -257,7 +257,7 @@ function installSeaSpider(app, { mongoUrl } = {}) {
   app.post('/auth/logout', (req, res, next) => {
     req.session.destroy((error) => {
       if (error) return next(error);
-      res.clearCookie('james.sid', { path: externalBasePath() || '/' });
+      res.clearCookie('james.sid', { path: '/' });
       return res.redirect(browserUrl('/auth/login'));
     });
   });
