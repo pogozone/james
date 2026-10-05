@@ -1,4 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DragDropContext,
+  Draggable,
+  DraggableProvided,
+  DraggableStateSnapshot,
+  Droppable,
+  DroppableProvided,
+  DroppableStateSnapshot,
+  DropResult
+} from '@hello-pangea/dnd';
 import { Epic, Todo } from '../types';
 import { epicService } from '../services/epicService';
 import { Plus, Save, Trash2, X } from 'lucide-react';
@@ -6,9 +16,10 @@ import { PageHeader } from './PageHeader';
 
 interface EpicListProps {
   todos: Todo[];
+  onMoveTodoToEpic: (todoId: string, epicId: string) => void;
 }
 
-export function EpicList({ todos }: EpicListProps) {
+export function EpicList({ todos, onMoveTodoToEpic }: EpicListProps) {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -72,9 +83,25 @@ export function EpicList({ todos }: EpicListProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Epic wirklich löschen? Zugeordnete Aufgaben werden entkoppelt.')) return;
-    await epicService.deleteEpic(id);
-    setEpics(prev => prev.filter(e => e.id !== id));
+    if ((epicUsage[id] || 0) > 0) {
+      alert('Dieses Epic kann erst gelöscht werden, wenn ihm keine Aufgaben mehr zugeordnet sind.');
+      return;
+    }
+    if (!window.confirm('Epic wirklich löschen?')) return;
+    try {
+      await epicService.deleteEpic(id);
+      setEpics(prev => prev.filter(e => e.id !== id));
+    } catch (error) {
+      console.error('Failed to delete epic:', error);
+      alert('Löschen fehlgeschlagen. Vermutlich sind diesem Epic noch Aufgaben zugeordnet.');
+    }
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId) return;
+    onMoveTodoToEpic(draggableId, destination.droppableId);
   };
 
   const startEdit = (epic: Epic) => {
@@ -180,7 +207,8 @@ export function EpicList({ todos }: EpicListProps) {
           Keine Epics vorhanden.
         </div>
       ) : (
-        epics.map(epic => (
+        <DragDropContext onDragEnd={handleDragEnd}>
+        {epics.map(epic => (
           <div key={epic.id} className="card shadow-sm mb-3">
             <div className="card-body d-flex flex-column">
               <div className="d-flex justify-content-between align-items-start gap-3">
@@ -221,18 +249,43 @@ export function EpicList({ todos }: EpicListProps) {
                     Zugeordnete Aufgaben: {epicUsage[epic.id] || 0}
                   </div>
 
-                  {(todosByEpic[epic.id]?.length || 0) > 0 ? (
-                    <div className="mt-2">
-                      <div className="small text-muted mb-1">Aufgaben</div>
-                      <div className="d-flex flex-column gap-1">
-                        {todosByEpic[epic.id].map(t => (
-                          <div key={t.id} className="small" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {t.title}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+                  <div className="mt-2">
+                    <div className="small text-muted mb-1">Aufgaben (zum Verschieben ziehen)</div>
+                    <Droppable droppableId={epic.id}>
+                      {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`d-flex flex-column gap-1 ${snapshot.isDraggingOver ? 'bg-light' : ''}`}
+                          style={{ minHeight: 28 }}
+                        >
+                          {(todosByEpic[epic.id] || []).map((t, index) => (
+                            <Draggable key={t.id} draggableId={t.id} index={index}>
+                              {(dragProvided: DraggableProvided, dragSnapshot: DraggableStateSnapshot) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  {...dragProvided.dragHandleProps}
+                                  className={`small ${dragSnapshot.isDragging ? 'shadow bg-white' : ''}`}
+                                  style={{
+                                    ...(dragProvided.draggableProps.style || {}),
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    cursor: 'grab'
+                                  }}
+                                  title={t.title}
+                                >
+                                  {t.title}
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
                 </div>
               </div>
 
@@ -252,13 +305,19 @@ export function EpicList({ todos }: EpicListProps) {
                   </button>
                 )}
 
-                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(epic.id)} title="Löschen">
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => handleDelete(epic.id)}
+                  disabled={(epicUsage[epic.id] || 0) > 0}
+                  title={(epicUsage[epic.id] || 0) > 0 ? 'Zuerst alle Aufgaben entkoppeln' : 'Löschen'}
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </div>
-        ))
+        ))}
+        </DragDropContext>
       )}
     </div>
   );

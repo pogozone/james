@@ -7,11 +7,12 @@ import { PageHeader } from './PageHeader';
 
 interface TodoFormProps {
   todo?: Todo;
+  initialTitle?: string;
   onSave: (todo: Todo) => void;
   onCancel: () => void;
 }
 
-export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) => {
+export const TodoForm: React.FC<TodoFormProps> = ({ todo, initialTitle, onSave, onCancel }) => {
   const [formData, setFormData] = useState<Partial<Todo>>({
     title: '',
     description: '',
@@ -35,8 +36,10 @@ export const TodoForm: React.FC<TodoFormProps> = ({ todo, onSave, onCancel }) =>
   useEffect(() => {
     if (todo) {
       setFormData(todo);
+    } else if (initialTitle) {
+      setFormData(prev => ({ ...prev, title: initialTitle }));
     }
-  }, [todo]);
+  }, [todo, initialTitle]);
 
   useEffect(() => {
     epicService.getEpics().then(setEpics).catch(err => {

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrumStatus, Sprint, SprintBucket, Todo } from './types';
+import { Idea, ScrumStatus, Sprint, SprintBucket, Todo } from './types';
 import { todoService } from './services/todoService';
 import { sprintService } from './services/sprintService';
+import { ideaService } from './services/ideaService';
 import { TodoList } from './components/TodoList';
 import { TodoForm } from './components/TodoForm';
 import { TodoDetail } from './components/TodoDetail';
@@ -9,13 +10,14 @@ import { TodoCalendar } from './components/TodoCalendar';
 import { ScrumBoard } from './components/ScrumBoard';
 import { DoneList } from './components/DoneList';
 import { EpicList } from './components/EpicList';
+import { IdeaList } from './components/IdeaList';
 import { SprintStats } from './components/SprintStats';
-import { Plus, Download, Calendar as CalendarIcon, Columns, CheckCircle, Layers, BarChart3 } from 'lucide-react';
+import { Plus, Download, Calendar as CalendarIcon, Columns, CheckCircle, Layers, BarChart3, Lightbulb } from 'lucide-react';
 import './App.css';
 
 
 type View = 'list' | 'form' | 'detail';
-type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic' | 'stats';
+type ViewMode = 'list' | 'calendar' | 'board' | 'done' | 'epic' | 'ideas' | 'stats';
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -25,6 +27,8 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('list');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [convertingIdeaId, setConvertingIdeaId] = useState<string | null>(null);
+  const [convertingIdeaTitle, setConvertingIdeaTitle] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -123,8 +127,18 @@ function App() {
           epicId: todo.epicId || undefined
         });
         setTodos(prev => [created, ...prev]);
+
+        if (convertingIdeaId) {
+          try {
+            await ideaService.deleteIdea(convertingIdeaId);
+          } catch (error) {
+            console.error('Failed to delete idea after conversion:', error);
+          }
+        }
       }
 
+      setConvertingIdeaId(null);
+      setConvertingIdeaTitle(undefined);
       setCurrentView('list');
       setSelectedTodo(null);
     } catch (error) {
@@ -171,6 +185,15 @@ function App() {
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedTodo(null);
+    setConvertingIdeaId(null);
+    setConvertingIdeaTitle(undefined);
+  };
+
+  const handleConvertIdeaToTask = (idea: Idea) => {
+    setSelectedTodo(null);
+    setConvertingIdeaId(idea.id);
+    setConvertingIdeaTitle(idea.title);
+    setCurrentView('form');
   };
 
   const handleViewModeChange = (mode: ViewMode) => {
@@ -367,6 +390,23 @@ function App() {
     })();
   };
 
+  const handleMoveTodoToEpic = async (todoId: string, epicId: string) => {
+    const prevTodo = todos.find(t => t.id === todoId);
+    if (!prevTodo || prevTodo.epicId === epicId) return;
+    const mutationVersion = beginTodoMutation(todoId);
+    replaceTodoInState({ ...prevTodo, epicId });
+    try {
+      const saved = await todoService.updateTodo(todoId, { epicId });
+      if (!isLatestTodoMutation(todoId, mutationVersion)) return;
+      replaceTodoInState(saved);
+    } catch (error) {
+      console.error('Failed to move todo to epic:', error);
+      if (!isLatestTodoMutation(todoId, mutationVersion)) return;
+      replaceTodoInState(prevTodo);
+      alert('Verschieben fehlgeschlagen. Die Änderung wurde zurückgesetzt.');
+    }
+  };
+
   const handleExportJson = () => {
     todoService.downloadTodoJson(todos);
   };
@@ -473,6 +513,13 @@ function App() {
                   >
                     <BarChart3 className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => handleViewModeChange('ideas')}
+                    className={`btn ${viewMode === 'ideas' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    title="Mir geht ein Licht auf"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
@@ -487,7 +534,7 @@ function App() {
                     <span>Sprint beenden</span>
                   </button>
                 )}
-                {viewMode !== 'board' && viewMode !== 'stats' && (
+                {viewMode !== 'board' && viewMode !== 'stats' && viewMode !== 'ideas' && (
                   <>
                     <button
                       onClick={handleExportJson}
@@ -548,7 +595,13 @@ function App() {
             <DoneList todos={todos} onMoveToBacklog={handleMoveDoneToBacklog} onView={handleViewTodo} />
           )}
 
-          {currentView === 'list' && viewMode === 'epic' && <EpicList todos={todos} />}
+          {currentView === 'list' && viewMode === 'epic' && (
+            <EpicList todos={todos} onMoveTodoToEpic={handleMoveTodoToEpic} />
+          )}
+
+          {currentView === 'list' && viewMode === 'ideas' && (
+            <IdeaList onConvertToTask={handleConvertIdeaToTask} />
+          )}
 
           {currentView === 'list' && viewMode === 'stats' && (
             <SprintStats todos={todos} sprints={allSprints} />
@@ -557,6 +610,7 @@ function App() {
           {currentView === 'form' && (
             <TodoForm
               todo={selectedTodo || undefined}
+              initialTitle={convertingIdeaTitle}
               onSave={handleSaveTodo}
               onCancel={handleBackToList}
             />

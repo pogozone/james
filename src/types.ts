@@ -14,6 +14,11 @@ export interface Todo {
   epicId?: string;
 }
 
+export interface Idea {
+  id: string;
+  title: string;
+}
+
 export interface Epic {
   id: string;
   title: string;

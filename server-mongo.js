@@ -1,6 +1,7 @@
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env.local') });
 const express = require('express');
-// const cors = require('cors');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const { installSeaSpider } = require('./james-auth.cjs');
 
@@ -54,8 +55,12 @@ function sendBadRequest(res, message) {
 }
 
 // Middleware
-// If another trusted browser origin really needs the API later, use an explicit allowlist.
-// app.use(cors());
+// In production the frontend and API share one origin behind the reverse proxy, so CORS
+// is unnecessary there. For local dev (npm run dev) the React dev server runs on its own
+// port, so the API must explicitly allow that origin.
+if (process.env.NODE_ENV !== 'production') {
+  app.use(cors({ origin: true, credentials: true }));
+}
 app.use(express.json());
 
 // Epic Schema
@@ -75,6 +80,19 @@ const EpicSchema = new mongoose.Schema({
 });
 
 const Epic = mongoose.model('Epic', EpicSchema);
+
+// Idea Schema
+const IdeaSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true
+  }
+}, {
+  timestamps: true
+});
+
+const Idea = mongoose.model('Idea', IdeaSchema);
 
 // Sprint Schema
 const SprintSchema = new mongoose.Schema({
@@ -278,8 +296,11 @@ const { requireSeaSpider } = installSeaSpider(app, {
 });
 
 // Keep the health endpoint public, protect every other API endpoint.
+// In local dev (npm run dev) there is no running SeaSpider instance to log in against,
+// so API auth is skipped outside of production.
 app.use('/james-todos/api', (req, res, next) => {
   if (req.path === '/health') return next();
+  if (process.env.NODE_ENV !== 'production') return next();
   return requireSeaSpider(req, res, next);
 });
 
@@ -360,16 +381,96 @@ app.delete('/james-todos/api/epics/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
+
+    const assignedCount = await Todo.countDocuments({ epicId: id });
+    if (assignedCount > 0) {
+      return res.status(409).json({ error: 'Epic enthält noch Aufgaben und kann nicht gelöscht werden' });
+    }
+
     const deleted = await Epic.findByIdAndDelete(id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
-
-    await Todo.updateMany({ epicId: id }, { $set: { epicId: null } });
 
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting epic:', error);
     if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
     res.status(500).json({ error: 'Failed to delete epic' });
+  }
+});
+
+// GET ideas
+app.get('/james-todos/api/ideas', async (req, res) => {
+  try {
+    const ideas = await Idea.find().sort({ createdAt: -1 });
+    const formatted = ideas.map(idea => ({
+      id: idea._id.toString(),
+      title: idea.title
+    }));
+    res.json(formatted);
+  } catch (error) {
+    console.error('Error reading ideas:', error);
+    res.status(500).json({ error: 'Failed to read ideas' });
+  }
+});
+
+// POST create idea
+app.post('/james-todos/api/ideas', async (req, res) => {
+  try {
+    const { title } = req.body || {};
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+
+    const created = await Idea.create({ title: title.trim() });
+
+    res.status(201).json({
+      id: created._id.toString(),
+      title: created.title
+    });
+  } catch (error) {
+    console.error('Error creating idea:', error);
+    res.status(500).json({ error: 'Failed to create idea' });
+  }
+});
+
+// PATCH update idea
+app.patch('/james-todos/api/ideas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
+    const { title } = req.body || {};
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+
+    const updated = await Idea.findByIdAndUpdate(id, { title: title.trim() }, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Not found' });
+
+    res.json({
+      id: updated._id.toString(),
+      title: updated.title
+    });
+  } catch (error) {
+    console.error('Error updating idea:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
+    res.status(500).json({ error: 'Failed to update idea' });
+  }
+});
+
+// DELETE idea
+app.delete('/james-todos/api/ideas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return sendBadRequest(res, 'Invalid id');
+    const deleted = await Idea.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ error: 'Not found' });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting idea:', error);
+    if (error && error.name === 'CastError') return sendBadRequest(res, 'Invalid id');
+    res.status(500).json({ error: 'Failed to delete idea' });
   }
 });
 
